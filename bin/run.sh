@@ -29,7 +29,7 @@ if [ "$(id -u)" -eq 0 ] && [ $ignoreRoot -eq 0 ]; then
 fi
 
 #prepare the enviroment
-bin/installDeps.sh $* || exit 1
+#bin/installDeps.sh $* || exit 1
 
 #Move to the node folder and start
 echo "Started Etherpad..."
