@@ -13,7 +13,9 @@ exports.expressCreateServer = function (hook_name, args, cb) {
   //serve index.html under /
   args.app.get('/', function(req, res)
   {
-    res.send(eejs.require("ep_etherpad-lite/templates/index.html"));
+    // SANDSTORM EDIT:  Just redirect to a particular pad!
+    res.redirect("/p/main");
+    // res.send(eejs.require("ep_etherpad-lite/templates/index.html"));
   });
 
   //serve javascript.html
