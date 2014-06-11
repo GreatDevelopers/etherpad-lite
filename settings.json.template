@@ -137,7 +137,7 @@
   */
 
   // restrict socket.io transport methods
-  "socketTransportProtocols" : ["xhr-polling", "jsonp-polling", "htmlfile"],
+  "socketTransportProtocols" : ["websocket"],
 
   // Allow Load Testing tools to hit the Etherpad Instance.  Warning this will disable security on the instance.
   "loadTest": false,
@@ -146,8 +146,8 @@
   /*
   "indentationOnNewLine": false,
   */
-
-  /* The toolbar buttons configuration.
+  
+  // The toolbar buttons configuration.
   "toolbar": {
     "left": [
       ["bold", "italic", "underline", "strikethrough"],
@@ -157,14 +157,13 @@
     ],
     "right": [
       ["importexport", "timeslider", "savedrevision"],
-      ["settings", "embed"],
+      ["settings"],
       ["showusers"]
     ],
     "timeslider": [
       ["timeslider_export", "timeslider_returnToPad"]
     ]
   },
-  */
 
   /* The log level we are using, can be: DEBUG, INFO, WARN, ERROR */
   "loglevel": "INFO",
