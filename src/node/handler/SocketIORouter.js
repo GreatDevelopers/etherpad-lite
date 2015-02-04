@@ -83,6 +83,25 @@ exports.setSocketIO = function(_socket) {
 
     client.on('message', function(message)
     {
+      // SANDSTORM EDIT: Replace message.token with the user ID set by Sandstorm. Normally,
+      // message.token is simply a random string generated in the Etherpad client in order to
+      // identify the user. Unfortunately, since cookies are wiped between sessions on
+      // Sandstorm, this token is promptly lost. The user ID, on the other hand, will always
+      // be associated with this user, even if the document migrates to a new Sandstorm
+      // instance.
+      //
+      // Note: The X-Sandstorm-User-Id header comes from the Sandstorm proxy. It cannot
+      //   be forged. Don't freak out.
+      var sandstormUserId = client.request.headers["x-sandstorm-user-id"];
+      if (sandstormUserId) {
+        message.token = "u" + sandstormUserId;
+      } else {
+        // The user is not logged in. Let them use their token, but prefix it so that they
+        // cannot impersonate any logged-in user.
+        message.token = "a" + message.token;
+      }
+      // END SANDSTORM EDIT
+
       if(message.protocolVersion && message.protocolVersion != 2) {
         messageLogger.warn("Protocolversion header is not correct:" + stringifyWithoutPassword(message));
         return;
