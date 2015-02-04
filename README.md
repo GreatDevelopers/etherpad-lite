@@ -1,3 +1,15 @@
+# Etherpad on Sandstorm
+
+This branch ports Etherpad to Sandstorm. To use it:
+
+1. Run `bin/installDeps.sh` once after cloning the repo. Note that in the main branch, this is done automatically by `run.sh`, but in the Sandstorm branch that line has been removed because it doesn't make sense inside the sandbox.
+2. Run `bin/run.sh` once, let Etherpad start, and then ctrl+C it. This does some first-time setup, creating some necessary files. If you do not do this, you'll get `EROFS` errors when Etherpad tries to create these files inside the sandbox.
+3. You may now run `spk dev` as described in the [Sandstorm porting guide](https://github.com/sandstorm-io/sandstorm/wiki/Porting-Guide).
+
+# Original Etherpad README follows
+
+------------------------------------------------------------------
+
 # A really-real time collaborative word processor for the web
 ![alt text](http://i.imgur.com/zYrGkg3.gif "Etherpad in action on PrimaryPad")
 
