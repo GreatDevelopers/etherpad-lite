@@ -74,6 +74,7 @@ echo "Ensure that all dependencies are up to date...  If this is the first time 
   [ -e ep_etherpad-lite ] || ln -s ../src ep_etherpad-lite
   cd ep_etherpad-lite
   npm install --loglevel warn
+  npm install sqlite3   # SANDSTORM EDIT
 ) || {
   rm -rf node_modules
   exit 1
