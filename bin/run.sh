@@ -38,7 +38,9 @@ if [ -e var/dirty.db ]; then
   # Upgrade dirty.db to sqlite.
   echo "Upgrading from dirty.db to sqlite..."
   node $SCRIPTPATH/node_modules/ep_etherpad-lite/sandstorm-migrate.js || exit 1
-  gzip var/dirty.db || exit 1
+  gzip -c var/dirty.db > var/dirty-backup.db.gz || exit 1
+  rm -f var/dirty.db
+  rm -f var/minified_*  # Delete garbage we used to litter here.
 fi
 
 echo "Started Etherpad..."

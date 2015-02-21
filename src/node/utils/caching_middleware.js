@@ -23,7 +23,13 @@ var settings = require('./Settings');
 var semver = require('semver');
 var existsSync = require('./path_exists');
 
-var CACHE_DIR = path.normalize(path.join(settings.root, 'var/'));
+// SANDSTORM EDIT: We cache to tmp instead of var. This means we regenerate
+//   minified Javascript every time Etherpad starts, but that is better than
+//   storing a copy of the whole javascript for every document, consuming the
+//   user's storage quota. Even better than both of these would be if we could
+//   generate the minified code before packaging and include it in the package,
+//   but that will be more invasive.
+var CACHE_DIR = path.normalize(path.join(settings.root, 'tmp/'));
 CACHE_DIR = existsSync(CACHE_DIR) ? CACHE_DIR : undefined;
 
 var responseCache = {};
