@@ -17,7 +17,9 @@ const pkgdef :Spk.PackageDefinition = (
     # This manifest is included in your app package to tell Sandstorm
     # about your app.
 
-    appVersion = 3,  # Increment this for every release.
+    appTitle = (defaultText = "Etherpad"),
+
+    appVersion = 4,  # Increment this for every release.
 
     actions = [
       # Define your "new document" handlers here.
