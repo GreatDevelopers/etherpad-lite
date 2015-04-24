@@ -1135,7 +1135,13 @@ function handleClientReady(client, message)
       //Save in sessioninfos that this session belonges to this pad
       sessioninfos[client.id].padId = padIds.padId;
       sessioninfos[client.id].readOnlyPadId = padIds.readOnlyPadId;
-      sessioninfos[client.id].readonly = padIds.readonly;
+
+      // SANDSTORM EDIT
+      var permissions = decodeURIComponent(client.request.headers["x-sandstorm-permissions"])
+          .split(",");
+      var readonly = permissions.indexOf("modify") === -1;
+      sessioninfos[client.id].readonly = readonly;
+      // END SANDSTORM EDIT
 
       //Log creation/(re-)entering of a pad
       var ip = remoteAddress[client.id];
@@ -1209,7 +1215,7 @@ function handleClientReady(client, message)
           "chatHead": pad.chatHead,
           "numConnectedUsers": roomClients.length,
           "readOnlyId": padIds.readOnlyPadId,
-          "readonly": padIds.readonly,
+          "readonly": readonly,  // SANDSTORM EDIT
           "serverTimestamp": new Date().getTime(),
           "userId": author,
           "abiwordAvailable": settings.abiwordAvailable(),
