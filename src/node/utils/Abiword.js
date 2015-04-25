@@ -87,6 +87,13 @@ else
       stdoutBuffer += data.toString();
     });
 
+    //abiword died, let's restart abiword and return an error with the callback
+    abiword.on('exit', function (code) 
+    {
+      spawnAbiword();
+      stdoutCallback("Abiword died with exit code " + code);
+    });
+
     //delegate the processing of stdout to a other function
     abiword.stdout.on('data',function (data)
     {
@@ -94,16 +101,6 @@ else
       stdoutBuffer+=data.toString();
 
       //we're searching for the prompt, cause this means everything we need is in the buffer
-      if(firstPrompt) {
-        //read and discard through the first prompt
-        var promptPos = stdoutBuffer.search("AbiWord:>");
-        if (promptPos == -1) {
-          //haven't seen first prompt yet
-          return;
-        }
-        firstPrompt = false;
-        stdoutBuffer = stdoutBuffer.slice(promptPos + 9);
-      }
       if(stdoutBuffer.search("AbiWord:>") != -1)
       {
         //filter the feedback message
@@ -113,28 +110,25 @@ else
         stdoutBuffer = "";
         
         //call the callback with the error message
-        if(stdoutCallback != null)
+        //skip the first prompt
+        if(stdoutCallback != null && !firstPrompt)
         {
           stdoutCallback(err);
           stdoutCallback = null;
         }
+        
+        firstPrompt = false;
       }
     });
   };
-
-  // SANDSTORM EDIT: We don't leave Abiword running, but instead start it up
-  //   each time it is needed, because most Etherpad instances won't use it.
-  //   (We could make this code a lot cleaner, but we want to keep changes
-  //   minimal to avoid future conflicts with upstream.)
+  spawnAbiword();
 
   doConvertTask = function(task, callback)
   {
-    spawnAbiword();  // SANDSTORM: start new process
     abiword.stdin.write("convert " + task.srcFile + " " + task.destFile + " " + task.type + "\n");
     //create a callback that calls the task callback and the caller callback
     stdoutCallback = function (err)
     {
-      abiword.stdin.end();  // SANDSTORM: end the process
       callback();
       console.log("queue continue");
       try{
