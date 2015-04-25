@@ -6,6 +6,25 @@ This branch ports Etherpad to Sandstorm. To use it:
 2. Run `bin/run.sh` once, let Etherpad start, and then ctrl+C it. This does some first-time setup, creating some necessary files. If you do not do this, you'll get `EROFS` errors when Etherpad tries to create these files inside the sandbox.
 3. You may now run `spk dev` as described in the [Sandstorm porting guide](https://github.com/sandstorm-io/sandstorm/wiki/Porting-Guide).
 
+# Abiword
+
+It's nice to have Abiword working.
+
+As of this writing, Debian Testing ships Abiword v3.0.0, which is broken (crashes when exporting ODF). You'll need to install Abiword v3.0.1 from source. This is probably useful for getting a stripped-down build anyway. Configure as follows:
+
+    ./configure --disable-default-plugins --enable-plugins="command pdf opendocument openxml" --disable-print --disable-spell --disable-collab-backend-telepathy --disable-collab-backend-xmpp --disable-collab-backend-tcp --disable-collab-backend-sugar --disable-collab-backend-service --without-gio
+
+Abiword's configure has a lot of tantalizing options that simply don't work. Apparently it is not well-tested. Namely:
+
+* `--enable-builtin-plugins` and `--disable-plugins` seem like they should allow the plugins we want to be built into the binary, but they result in a cyclic makefile.
+* `--disable-statusbar` leads to linker errors.
+
+Once installed, note that AbiWord incorrectly looks for its plugins in the wrong location. Fix that with:
+
+    sudo ln -s /usr/local/lib/abiword-3.0 /usr/lib/x86_64-linux-gnu/abiword-3.0
+
+If you don't want to deal with all this, edit settings.json and disable Abiword.
+
 # Original Etherpad README follows
 
 ------------------------------------------------------------------
