@@ -116,4 +116,11 @@ do
   fi
 done
 
+#Install plugins
+PLUGINS="ep_align ep_author_hover ep_author_neat ep_comments_page ep_font_color ep_font_family ep_font_size ep_headings2 ep_markdown ep_page_view ep_print ep_spellcheck ep_sticky_attributes ep_subscript_and_superscript"
+npm install $PLUGINS
+for PLUGIN in $PLUGINS; do
+  echo -n done > node_modules/$PLUGIN/.ep_initialized
+done
+
 exit 0
