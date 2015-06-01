@@ -1216,6 +1216,7 @@ function handleClientReady(client, message)
           "numConnectedUsers": roomClients.length,
           "readOnlyId": padIds.readOnlyPadId,
           "readonly": readonly,  // SANDSTORM EDIT
+          "sandstormPermissions": permissions,  // SANDSTORM EDIT
           "serverTimestamp": new Date().getTime(),
           "userId": author,
           "abiwordAvailable": settings.abiwordAvailable(),
