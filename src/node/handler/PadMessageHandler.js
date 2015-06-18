@@ -981,9 +981,9 @@ function handleClientReady(client, message)
     messageLogger.warn("Dropped message, CLIENT_READY Message has no token!");
     return;
   }
-  if(!message.padId)
+  if(message.padId !== "main")  // SANDSTORM EDIT: only one pad!
   {
-    messageLogger.warn("Dropped message, CLIENT_READY Message has no padId!");
+    messageLogger.warn("Dropped message, CLIENT_READY Message has wrong padId!");
     return;
   }
   if(!message.protocolVersion)

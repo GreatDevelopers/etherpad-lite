@@ -13,9 +13,23 @@ exports.expressCreateServer = function (hook_name, args, cb) {
   //serve index.html under /
   args.app.get('/', function(req, res)
   {
-    // SANDSTORM EDIT:  Just redirect to a particular pad!
-    res.redirect("/p/main");
-    // res.send(eejs.require("ep_etherpad-lite/templates/index.html"));
+    // SANDSTORM EDIT:  Load /p/main directly.
+    req.url = "/p/main";
+    req.params.pad = "main";
+    var permissions = decodeURIComponent(req.headers["x-sandstorm-permissions"])
+        .split(",");
+    var isReadOnly = permissions.indexOf("modify") === -1;
+
+    hooks.callAll("padInitToolbar", {
+      toolbar: toolbar,
+      isReadOnly: isReadOnly
+    });
+
+    res.send(eejs.require("ep_etherpad-lite/templates/pad.html", {
+      req: req,
+      toolbar: toolbar,
+      isReadOnly: isReadOnly
+    }));
   });
 
   //serve javascript.html
