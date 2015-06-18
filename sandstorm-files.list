@@ -2149,6 +2149,7 @@ src/static/css/iframe_editor.css
 src/static/css/pad.css
 src/static/custom/pad.css
 src/static/custom/pad.js
+src/static/favicon.ico
 src/static/font/fontawesome-etherpad.woff
 src/static/js
 src/static/js/AttributeManager.js
@@ -2208,4 +2209,4 @@ usr/lib/x86_64-linux-gnu/libcares.so.2.1.0
 usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0
 usr/lib/x86_64-linux-gnu/libssl.so.1.0.0
 usr/lib/x86_64-linux-gnu/libstdc++.so.6
-usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.20
+usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
