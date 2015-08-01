@@ -140,7 +140,7 @@ function savePassword()
 function sendClientReady(isReconnect, messageType)
 {
   messageType = typeof messageType !== 'undefined' ? messageType : 'CLIENT_READY';
-  var padId = "main";  // SANDSTORM EDIT
+  var padId = document.location.pathname.substring(document.location.pathname.lastIndexOf("/") + 1);
   padId = decodeURIComponent(padId); // unescape neccesary due to Safari and Opera interpretation of spaces
 
   if(!isReconnect)
