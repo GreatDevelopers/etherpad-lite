@@ -19,24 +19,53 @@ const pkgdef :Spk.PackageDefinition = (
 
     appTitle = (defaultText = "Etherpad"),
 
-    appVersion = 10,  # Increment this for every release.
+    appVersion = 11,  # Increment this for every release.
     
     appMarketingVersion = (defaultText = "2015.08.01 (1.5.6+)"),
 
     actions = [
       # Define your "new document" handlers here.
       ( title = (defaultText = "New Etherpad Document"),
+        nounPhrase = (defaultText = "pad"),
         command = .myCommand
         # The command to run when starting for the first time. (".myCommand"
         # is just a constant defined at the bottom of the file.)
       )
     ],
 
-    continueCommand = .myCommand
+    continueCommand = .myCommand,
     # This is the command called to start your app back up after it has been
     # shut down for inactivity. Here we're using the same command as for
     # starting a new instance, but you could use different commands for each
     # case.
+
+    metadata = (
+      icons = (
+        appGrid = (svg = embed "app-graphics/etherpad-128.svg"),
+        grain = (svg = embed "app-graphics/etherpad-24.svg"),
+        market = (svg = embed "app-graphics/etherpad-150.svg"),
+      ),
+
+      website = "http://etherpad.org/",
+      codeUrl = "https://github.com/kentonv/etherpad-lite",
+      license = (openSource = apache2),
+      categories = [office, productivity],
+
+      author = (
+        contactEmail = "kenton@sandstorm.io",
+        pgpSignature = embed "pgp-signature",
+        upstreamAuthor = "Etherpad Foundation",
+      ),
+      pgpKeyring = embed "pgp-keyring",
+
+      description = (defaultText = embed "description.md"),
+
+      screenshots = [
+        (width = 448, height = 343, png = embed "sandstorm-screenshot.png")
+      ],
+
+      changeLog = (defaultText = embed "CHANGELOG.md"),
+    ),
   ),
 
   sourceMap = (
