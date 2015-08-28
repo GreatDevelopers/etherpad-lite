@@ -59,6 +59,7 @@ const pkgdef :Spk.PackageDefinition = (
       pgpKeyring = embed "pgp-keyring",
 
       description = (defaultText = embed "description.md"),
+      shortDescription = (defaultText = "Document editor"),
 
       screenshots = [
         (width = 448, height = 343, png = embed "sandstorm-screenshot.png")
