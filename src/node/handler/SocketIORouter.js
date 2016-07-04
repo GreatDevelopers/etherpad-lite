@@ -96,9 +96,9 @@ exports.setSocketIO = function(_socket) {
       if (sandstormUserId) {
         message.token = "u" + sandstormUserId;
       } else {
-        // The user is not logged in. Let them use their token, but prefix it so that they
-        // cannot impersonate any logged-in user.
-        message.token = "a" + message.token;
+        // The user is not logged in. Use the user's tab ID as the token instead. This is,
+        // again, not forgeable, and uniquely identifies a single session.
+        message.token = "a" + client.request.headers["x-sandstorm-tab-id"];
       }
       // END SANDSTORM EDIT
 
