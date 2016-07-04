@@ -259,7 +259,8 @@ function handshake()
     else if (!receivedClientVars && obj.type == "CLIENT_VARS")
     {
       //log the message
-      if (window.console) console.log(obj);
+      // SANDSTORM EDIT: don't
+      // if (window.console) console.log(obj);
 
       receivedClientVars = true;
 
