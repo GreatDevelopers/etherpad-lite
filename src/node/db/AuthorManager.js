@@ -189,6 +189,29 @@ exports.setAuthorName = function (author, name, callback)
   db.setSub("globalAuthor:" + author, ["name"], name, callback);
 }
 
+// SANDSTORM EDIT
+/**
+ * Returns the Sandstorm user ID of the author.
+ * @param {String} author The id of the author
+ * @param {Function} callback callback(err, sandstormId)
+ */
+exports.getAuthorSandstormId = function (author, callback)
+{
+  db.getSub("globalAuthor:" + author, ["sandstormId"], callback);
+}
+
+/**
+ * Sets the Sandstorm user ID of the author
+ * @param {String} author The id of the author
+ * @param {String} sandstormId The Sandstorm user ID of the author
+ * @param {Function} callback (optional)
+ */
+exports.setAuthorSandstormId = function (author, sandstormId, callback)
+{
+  db.setSub("globalAuthor:" + author, ["sandstormId"], sandstormId, callback);
+}
+// END SANDSTORM EDIT
+
 /**
  * Returns an array of all pads this author contributed to
  * @param {String} author The id of the author

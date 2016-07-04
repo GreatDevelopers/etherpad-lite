@@ -38,6 +38,7 @@ var hooks = require("ep_etherpad-lite/static/js/pluginfw/hooks.js");
 var channels = require("channels");
 var stats = require('../stats');
 var remoteAddress = require("../utils/RemoteAddress").remoteAddress;
+var sandstorm = require('./SandstormHandler.js');
 
 /**
  * A associative array that saves informations about a session
@@ -222,6 +223,8 @@ exports.handleMessage = function(client, message)
       } else if (message.data.type == "USER_CHANGES") {
         stats.counter('pendingEdits').inc()
         padChannels.emit(message.padId, {client: client, message: message});// add to pad queue
+        // SANDSTORM EDIT
+        sandstorm.activity(client.request.headers["x-sandstorm-session-id"], "edit");
       } else if (message.data.type == "USERINFO_UPDATE") {
         handleUserInfoUpdate(client, message);
       } else if (message.data.type == "CHAT_MESSAGE") {
@@ -298,7 +301,6 @@ exports.handleMessage = function(client, message)
     ]);
   }
 }
-
 
 /**
  * Handles a save revision message
@@ -1058,6 +1060,12 @@ function handleClientReady(client, message)
             if (!authorName) {
               authorName = decodeURIComponent(client.request.headers["x-sandstorm-username"]);
               authorManager.setAuthorName(author, authorName);
+            }
+            if (!value.sandstormId) {
+              var sandstormId = client.request.headers["x-sandstorm-user-id"];
+              if (sandstormId) {
+                authorManager.setAuthorSandstormId(author, sandstormId);
+              }
             }
             // END SANDSTORM EDIT
             callback();

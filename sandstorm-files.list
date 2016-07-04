@@ -5,6 +5,7 @@
 .git/HEAD
 .git/refs/heads/sandstorm
 .git/refs/heads/sandstorm-1.6.0
+.git/refs/heads/sandstorm-notify
 APIKEY.txt
 SESSIONKEY.txt
 bin/dash
@@ -37,7 +38,9 @@ lib/x86_64-linux-gnu/libz.so.1
 lib/x86_64-linux-gnu/libz.so.1.2.8
 lib64/ld-linux-x86-64.so.2
 node_modules
+node_modules/capnp/bin/linux-x64-v8-4.5/capnp.node
 node_modules/capnp/package.json
+node_modules/capnp/src/node-capnp/capnp.js
 node_modules/ep_align/.ep_initialized
 node_modules/ep_align/ep.json
 node_modules/ep_align/index.js
@@ -169,7 +172,6 @@ node_modules/ep_comments_page/node_modules/socket.io-client/node_modules/has-bin
 node_modules/ep_comments_page/node_modules/socket.io-client/node_modules/has-binary/package.json
 node_modules/ep_comments_page/node_modules/socket.io-client/node_modules/indexof/index.js
 node_modules/ep_comments_page/node_modules/socket.io-client/node_modules/indexof/package.json
-node_modules/ep_comments_page/node_modules/socket.io-client/node_modules/object-component/index.js
 node_modules/ep_comments_page/node_modules/socket.io-client/node_modules/object-component/package.json
 node_modules/ep_comments_page/node_modules/socket.io-client/node_modules/parseuri/index.js
 node_modules/ep_comments_page/node_modules/socket.io-client/node_modules/parseuri/node_modules
@@ -415,6 +417,7 @@ src/node/handler/APIHandler.js
 src/node/handler/ExportHandler.js
 src/node/handler/ImportHandler.js
 src/node/handler/PadMessageHandler.js
+src/node/handler/SandstormHandler.js
 src/node/handler/SocketIORouter.js
 src/node/hooks/express.js
 src/node/hooks/express/admin.js
@@ -2191,6 +2194,12 @@ usr/bin/id
 usr/bin/node
 usr/bin/nodejs
 usr/bin/strace
+usr/include/sandstorm/activity.capnp
+usr/include/sandstorm/grain.capnp
+usr/include/sandstorm/identity.capnp
+usr/include/sandstorm/powerbox.capnp
+usr/include/sandstorm/sandstorm-http-bridge.capnp
+usr/include/sandstorm/util.capnp
 usr/lib/libv8.so.3.14.5
 usr/lib/nodejs/mime.js
 usr/lib/x86_64-linux-gnu/libcares.so.2
@@ -2209,6 +2218,12 @@ usr/lib/x86_64-linux-gnu/libstdc++.so.6
 usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.22
 usr/lib/x86_64-linux-gnu/libuv.so.1
 usr/lib/x86_64-linux-gnu/libuv.so.1.0.0
+usr/local/include/capnp/c++.capnp
+usr/local/lib/libcapnp-0.6-dev.so
+usr/local/lib/libcapnp-rpc-0.6-dev.so
+usr/local/lib/libcapnpc-0.6-dev.so
+usr/local/lib/libkj-0.6-dev.so
+usr/local/lib/libkj-async-0.6-dev.so
 usr/share/node-mime/types.json
 usr/share/zoneinfo/America/Los_Angeles
 usr/share/zoneinfo/SystemV/PST8PDT
