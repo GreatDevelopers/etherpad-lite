@@ -9,8 +9,8 @@
 // place. But we need to migrate old pads. So that's where this script comes
 // in.
 
-var ueberDB = require("ueberDB");
-var dirtyDB = require("ueberDB/node_modules/dirty");
+var ueberDB = require("ueberdb2");
+var dirtyDB = require("ueberdb2/node_modules/dirty");
 
 var dirty = new dirtyDB("var/dirty.db");
 var sqlite = new ueberDB.database("sqlite", {filename: "var/sqlite3.db"});
