@@ -22,7 +22,7 @@ var ACTIVITY_TYPES = {
   "reply": 2,
 };
 
-exports.activity = function (sessionId, type, path, threadPath, threadTitle) {
+exports.activity = function (sessionId, type, path, threadPath, threadTitle, body) {
   if (type == "edit") {
     // Only post edits once every 15 seconds per active session.
     var last = lastActivityTime[sessionId] || 0;
@@ -47,6 +47,11 @@ exports.activity = function (sessionId, type, path, threadPath, threadTitle) {
       activity.thread = {
         path: threadPath,
         title: { defaultText: threadTitle || threadPath },
+      };
+    }
+    if (body) {
+      activity.notification = {
+        caption: { defaultText: body }
       };
     }
 
