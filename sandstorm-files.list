@@ -283,6 +283,7 @@ node_modules/ep_page_view/index.js
 node_modules/ep_page_view/locales
 node_modules/ep_page_view/locales/de.json
 node_modules/ep_page_view/locales/en.json
+node_modules/ep_page_view/locales/pl.json
 node_modules/ep_page_view/locales/pt-BR.json
 node_modules/ep_page_view/package.json
 node_modules/ep_page_view/page_view.js
