@@ -91,7 +91,7 @@ const pkgdef :Spk.PackageDefinition = (
   # `spk dev` will write a list of all the files your app uses to this file.
   # You should review it later, before shipping your app.
 
-  alwaysInclude = ["src", "node_modules"],
+  alwaysInclude = ["src", "node_modules", "cache"],
   # Fill this list with more names of files or directories that should be
   # included in your package, even if not listed in sandstorm-files.list.
   # Use this to force-include stuff that you know you need but which may
@@ -133,6 +133,7 @@ const myCommand :Spk.Manifest.Command = (
   argv = ["/sandstorm-http-bridge", "9001", "--", "bin/run.sh"],
   environ = [
     # Note that this defines the *entire* environment seen by your app.
-    (key = "PATH", value = "/usr/local/bin:/usr/bin:/bin")
+    (key = "PATH", value = "/usr/local/bin:/usr/bin:/bin"),
+    (key = "SANDSTORM", value = "1"),
   ]
 );

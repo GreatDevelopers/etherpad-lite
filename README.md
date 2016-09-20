@@ -5,6 +5,7 @@ This branch ports Etherpad to Sandstorm. To use it:
 1. Run `bin/installDeps.sh` once after cloning the repo. Note that in the main branch, this is done automatically by `run.sh`, but in the Sandstorm branch that line has been removed because it doesn't make sense inside the sandbox.
 2. Run `bin/run.sh` once, let Etherpad start, and then ctrl+C it. This does some first-time setup, creating some necessary files. If you do not do this, you'll get `EROFS` errors when Etherpad tries to create these files inside the sandbox.
 3. You may now run `spk dev` as described in the [Sandstorm porting guide](https://github.com/sandstorm-io/sandstorm/wiki/Porting-Guide).
+4. If you plan to run `spk pack` to build a final package, FIRST run `bin/run.sh` again. This time, actually open up the local Etherpad instance, click on things, and especially open the timeslider. During this time, Etherpad is populating the minified code cache, which will be shipped with the package. This improves Etherpad startup time. HOWEVER, if you plan to do any further Etherpad development touching client-side code, you must first delete the cache. Otherwise, `spk dev` will happily serve the cached files and you won't see your changes.
 
 # Original Etherpad README follows
 

@@ -31,6 +31,17 @@ fi
 #prepare the enviroment
 #bin/installDeps.sh $* || exit 1
 
+# Clear the cache directory so that we can refill it if running outside Sandstorm.
+if [ "${SANDSTORM:-no}" = no ]; then
+  mkdir -p cache
+  # Load .capnp files from sandstorm installation. (In the Sandstorm sandbox, these are mapped
+  # to /usr/include.)
+  export NODE_PATH="/opt/sandstorm/latest/usr/include"
+elif [ ! -e cache ]; then
+  echo "ERROR: Must run once outside Sandstorm to populate minification cache" >&2
+  exit 1
+fi
+
 #Move to the node folder and start
 SCRIPTPATH=`pwd -P`
 

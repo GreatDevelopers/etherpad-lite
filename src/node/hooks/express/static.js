@@ -11,6 +11,9 @@ exports.expressCreateServer = function (hook_name, args, cb) {
   var assetCache = new CachingMiddleware;
   args.app.all(/\/javascripts\/(.*)/, assetCache.handle);
 
+  // SANDSTORM EDIT: We throw the asset cache on the CSS too.
+  args.app.all(/\/css\/.*\.css$/, assetCache.handle);
+
   // Minify will serve static files compressed (minify enabled). It also has
   // file-specific hacks for ace/require-kernel/etc.
   args.app.all('/static/:filename(*)', minify.minify);

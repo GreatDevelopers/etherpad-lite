@@ -1145,8 +1145,9 @@ function handleClientReady(client, message)
       sessioninfos[client.id].readOnlyPadId = padIds.readOnlyPadId;
 
       // SANDSTORM EDIT
-      var permissions = decodeURIComponent(client.request.headers["x-sandstorm-permissions"])
-          .split(",");
+      var permissions = process.env.SANDSTORM
+          ? decodeURIComponent(client.request.headers["x-sandstorm-permissions"]).split(",")
+          : ["modify", "comment"];
       var readonly = permissions.indexOf("modify") === -1;
       sessioninfos[client.id].readonly = readonly;
       // END SANDSTORM EDIT

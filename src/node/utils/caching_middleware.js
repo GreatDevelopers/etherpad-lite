@@ -23,14 +23,9 @@ var settings = require('./Settings');
 var semver = require('semver');
 var existsSync = require('./path_exists');
 
-// SANDSTORM EDIT: We cache to tmp instead of var. This means we regenerate
-//   minified Javascript every time Etherpad starts, but that is better than
-//   storing a copy of the whole javascript for every document, consuming the
-//   user's storage quota. Even better than both of these would be if we could
-//   generate the minified code before packaging and include it in the package,
-//   but that will be more invasive.
-var CACHE_DIR = path.normalize(path.join(settings.root, 'tmp/'));
-CACHE_DIR = existsSync(CACHE_DIR) ? CACHE_DIR : undefined;
+// SANDSTORM EDIT: We generate all minified files into the "cache" directory by running Etherpad
+//   outside Sandstorm, then ship that with the package. This avoids minifying at runtime.
+var CACHE_DIR = "cache/";
 
 var responseCache = {};
 
@@ -60,11 +55,24 @@ CachingMiddleware.prototype = new function () {
     fs.stat(CACHE_DIR + 'minified_' + cacheKey, function (error, stats) {
       var modifiedSince = (req.headers['if-modified-since']
           && new Date(req.headers['if-modified-since']));
-      var lastModifiedCache = !error && stats.mtime;
-      if (lastModifiedCache && responseCache[cacheKey]) {
-        req.headers['if-modified-since'] = lastModifiedCache.toUTCString();
-      } else {
-        delete req.headers['if-modified-since'];
+
+      if (!error) {
+        if (process.env.SANDSTORM) {
+          // Inside the sandbox, we always want to use the cached copy if we have one.
+          if (responseCache[cacheKey]) {
+            // Cool, go ahead and respond now.
+            return respond();
+          } else {
+            // Claim the last-modified date is in the distant future. This prevents any date skew
+            // from the packaging / installation process from making us decide not to use the
+            // cache.
+            req.headers['if-modified-since'] = new Date(1e14);
+          }
+        } else if (responseCache[cacheKey]) {
+          req.headers['if-modified-since'] = stats.mtime.toUTCString();
+        } else {
+          delete req.headers['if-modified-since'];
+        }
       }
 
       // Always issue get to downstream.
@@ -93,8 +101,9 @@ CachingMiddleware.prototype = new function () {
             && new Date(res.getHeader('last-modified')));
 
         res.writeHead = old_res.writeHead;
-        if (status == 200) {
+        if (status == 200 && !process.env.SANDSTORM) {
           // Update cache
+          console.log("CACHING:", path);
           var buffer = '';
 
           Object.keys(headers || {}).forEach(function (key) {
@@ -134,6 +143,20 @@ CachingMiddleware.prototype = new function () {
           };
         } else if (status == 304) {
           // Nothing new changed from the cached version.
+
+          if (!responseCache[cacheKey]) {
+            // Populate responseCache now. Note that we'll only ever reach this branch inside
+            // Sandstorm because otherwise we would have deleted the If-Modified-Since header
+            // earlier, preventing a 304 response from happening.
+            //
+            // TODO(cleanup): It seems that 304 responses are missing the Content-Type header.
+            //   This manages not to break things by virtue of the fact that only CSS and
+            //   Javascript are being cached, and the browser doesn't require correct
+            //   Content-Types for these because it already knows in context what they are.
+            //   However, it does force us to put in a hack below to force-enable gzip.
+            responseCache[cacheKey] = {statusCode: 200, headers: headers};
+          }
+
           old_res.write = res.write;
           old_res.end = res.end;
           res.write = function(data, encoding) {};
@@ -158,9 +181,20 @@ CachingMiddleware.prototype = new function () {
         var statusCode = responseCache[cacheKey].statusCode;
 
         var pathStr = CACHE_DIR + 'minified_' + cacheKey;
-        if (supportsGzip && (headers['content-type'] || '').match(/^text\//)) {
+        if ((supportsGzip && (headers['content-type'] || '').match(/^text\//)) ||
+            // SANDSTORM HACK: Unfortunately Sandstorm doesn't pass through Accept-Encoding (an
+            //   oversight?) but we're pretty sure all browsers can handle gzip. Also, due to
+            //   the hack above in the status == 304 branch, we don't have Content-Type here, so
+            //   we can't detect text, but we know that we only actually cache JS and CSS.
+            process.env.SANDSTORM) {
           pathStr = pathStr + '.gz';
           headers['content-encoding'] = 'gzip';
+        }
+
+        if (process.env.SANDSTORM) {
+          // Static content will never ever change on Sandstorm since a package upgrade would
+          // start a new session on a new host.
+          headers['cache-control'] = "max-age=315360000";
         }
 
         var lastModified = (headers['last-modified']
