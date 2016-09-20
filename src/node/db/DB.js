@@ -24,7 +24,8 @@ var settings = require("../utils/Settings");
 var log4js = require('log4js');
 
 //set database settings
-var db = new ueberDB.database(settings.dbType, settings.dbSettings, null, log4js.getLogger("ueberDB"));
+// SANDSTORM EDIT: ueberDB is very chatty, so we stopped passing it a logger.
+var db = new ueberDB.database(settings.dbType, settings.dbSettings, null);
 
 /**
  * The UeberDB Object that provides the database functions

@@ -4,6 +4,7 @@
  * Fix: Newlines are no longer randomly inserted around page boundaries or when reloading a pad in the background. However, page boundaries (when enabled) are no longer automatically computed, as these were causing the problem. You can still manually insert page boundaries with ctrl+enter. See: https://github.com/ether/ep_page_view/issues/30
  * Fix: Comment/reply desktop notifications now include body text.
  * Fix: Improved startup time by ~25% by shipping cached minified assets with the package and making better use of gzip.
+ * Fix: Removed lots of unnecessarily chatty server-side logging.
 
 ## 2016-09-12
  * Fix: Pads which haven't been opened since February 2015 can now be opened again.

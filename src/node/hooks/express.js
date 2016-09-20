@@ -10,21 +10,9 @@ var server;
 var serverName;
 
 exports.createServer = function () {
-  console.log("Report bugs at https://github.com/ether/etherpad-lite/issues")
-
+  // SANDSTORM EDIT: Removed chatty console logging that mostly doesn't apply on Sandstorm.
   serverName = "Etherpad " + settings.getGitCommit() + " (http://etherpad.org)";
-  
-  console.log("Your Etherpad version is " + settings.getEpVersion() + " (" + settings.getGitCommit() + ")");
-
   exports.restartServer();
-
-  console.log("You can access your Etherpad instance at http://" + settings.ip + ":" + settings.port + "/");
-  if(!_.isEmpty(settings.users)){
-    console.log("The plugin admin page is at http://" + settings.ip + ":" + settings.port + "/admin/plugins");
-  }
-  else{
-    console.warn("Admin username and password not set in settings.json.  To access admin please uncomment and edit 'users' in settings.json");
-  }
 }
 
 exports.restartServer = function () {
