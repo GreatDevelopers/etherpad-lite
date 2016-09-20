@@ -1,3 +1,54 @@
+# Sandstorm
+
+## 2016-09-19
+ * Fix: Newlines are no longer randomly inserted around page boundaries or when reloading a pad in the background. However, page boundaries (when enabled) are no longer automatically computed, as these were causing the problem. You can still manually insert page boundaries with ctrl+enter. See: https://github.com/ether/ep_page_view/issues/30
+ * Fix: Comment/reply desktop notifications now include body text.
+
+## 2016-09-12
+ * Fix: Pads which haven't been opened since February 2015 can now be opened again.
+ * Fix: If you open a pad with no comment replies, you wouldn't see future replies added by others.
+ * Fix: Etherpad would become unresponsive after 8 or so comment replies had been received since opening the pad.
+
+## 2016-07-11
+ * NEW: Support Sandstorm activity events and notifications.
+ * Fix: Stop spamming the browser console.
+ * Other: Use Tab ID to distinguish anonymous users rather than a token stored in local storage by the app.
+
+## 2016-06-29
+ * Updated to upstream Etherpad 1.6.0.
+
+## 2015-08-15
+ * Updated to upstream Etherpad 1.5.7.
+ * Other: Added app market metadata.
+
+## 2015-08-01
+ * Fix: Timeslider works again.
+
+## 2015-06-18
+ * Fix: Improved startup time by adding prefetch directives.
+
+## 2015-05-31
+ * NEW: Added ep_comments_page plugin with ability to share pad in comment-only mode.
+ * NEW: Added several other useful plugins: ep_align ep_author_neat ep_comments_page ep_font_color ep_font_family ep_font_size ep_headings2 ep_markdown ep_page_view ep_print ep_spellcheck ep_sticky_attributes ep_subscript_and_superscript
+
+## 2015-04-25
+ * Updated to upstream Etherpad 1.5.6.
+ * NEW: Read-only sharing mode.
+
+## 2015-02-20
+ * Fix: Switched to sqlite for storage, so pads will no longer grow huge quickly.
+ * Fix: Minified code is now written to /tmp rather than /var to avoid bloating the grain.
+ * Fix: Author name is now automatically initialized from Sandstorm profile.
+
+## 2014-06-02
+ * Fix: Removed error about Abiword not being installed.
+
+## 2014-02-19
+ * First successful run as a Sansdtorm app.
+ * First useful app on Sandstorm.
+
+# Upstream
+
 #1.6.1
  * NEW: Hook aceRegisterNonScrollableEditEvents to register events that shouldn't scroll
  * NEW: Added 'item' parameter to registerAceCommand Hook
