@@ -117,10 +117,24 @@ do
 done
 
 #Install plugins
-PLUGINS="ep_align ep_author_neat ep_comments_page ep_font_color ep_font_family ep_font_size ep_headings2 ep_markdown ep_page_view ep_print ep_spellcheck ep_sticky_attributes ep_subscript_and_superscript"
+PLUGINS="ep_align ep_author_neat ep_font_color ep_font_family ep_font_size ep_headings2 ep_markdown ep_print ep_spellcheck ep_sticky_attributes ep_subscript_and_superscript"
+
 npm install $PLUGINS
 for PLUGIN in $PLUGINS; do
   echo -n done > node_modules/$PLUGIN/.ep_initialized
 done
+
+(cd node_modules && git clone https://github.com/kentonv/ep_page_view.git)
+(cd node_modules/ep_page_view && npm install)
+echo -n done > node_modules/ep_page_view/.ep_initialized
+
+(cd node_modules && git clone https://github.com/kentonv/ep_comments.git ep_comments_page)
+(cd node_modules/ep_comments_page && npm install)
+echo -n done > node_modules/ep_comments_page/.ep_initialized
+
+#Install capnp
+#TODO: This is a hack. It should probably be declared as an npm dependency.
+(cd node_modules && git clone https://github.com/kentonv/node-capnp.git capnp -b node4)
+(cd node_modules/capnp && npm install)
 
 exit 0
