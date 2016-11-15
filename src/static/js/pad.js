@@ -489,6 +489,7 @@ var pad = {
       name: clientVars.userName,
       ip: pad.getClientIp(),
       colorId: clientVars.userColor,
+      avatarUrl: clientVars.userAvatarUrl,
       userAgent: pad.getDisplayUserAgent()
     };
 

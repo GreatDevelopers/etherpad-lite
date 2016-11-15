@@ -210,6 +210,27 @@ exports.setAuthorSandstormId = function (author, sandstormId, callback)
 {
   db.setSub("globalAuthor:" + author, ["sandstormId"], sandstormId, callback);
 }
+
+/**
+ * Returns the avatar URL of the author.
+ * @param {String} author The id of the author
+ * @param {Function} callback callback(err, avatarUrl)
+ */
+exports.getAuthorAvatarUrl = function (author, callback)
+{
+  db.getSub("globalAuthor:" + author, ["avatarUrl"], callback);
+}
+
+/**
+ * Sets the avatar URL of the author
+ * @param {String} author The id of the author
+ * @param {String} avatarUrl The URL of the user's avatar.
+ * @param {Function} callback (optional)
+ */
+exports.setAuthorAvatarUrl = function (author, avatarUrl, callback)
+{
+  db.setSub("globalAuthor:" + author, ["avatarUrl"], avatarUrl, callback);
+}
 // END SANDSTORM EDIT
 
 /**

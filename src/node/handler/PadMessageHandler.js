@@ -132,7 +132,7 @@ exports.handleDisconnect = function(client)
     accessLogger.info('[LEAVE] Pad "'+session.padId+'": Author "'+session.author+'" on client '+client.id+' with IP "'+ip+'" left the pad')
 
     //get the author color out of the db
-    authorManager.getAuthorColorId(session.author, function(err, color)
+    authorManager.getAuthor(session.author, function(err, authorInfo)
     {
       ERR(err);
 
@@ -143,9 +143,10 @@ exports.handleDisconnect = function(client)
           type: "USER_LEAVE",
           userInfo: {
             "ip": "127.0.0.1",
-            "colorId": color,
+            "colorId": authorInfo.colorId,
             "userAgent": "Anonymous",
-            "userId": session.author
+            "userId": session.author,
+            "avatarUrl": authorInfo.avatarUrl
           }
         }
       };
@@ -569,24 +570,27 @@ function handleUserInfoUpdate(client, message)
 
   var padId = session.padId;
 
-  var infoMsg = {
-    type: "COLLABROOM",
-    data: {
-      // The Client doesn't know about USERINFO_UPDATE, use USER_NEWINFO
-      type: "USER_NEWINFO",
-      userInfo: {
-        userId: author,
-        //set a null name, when there is no name set. cause the client wants it null
-        name: message.data.userInfo.name || null,
-        colorId: message.data.userInfo.colorId,
-        userAgent: "Anonymous",
-        ip: "127.0.0.1",
+  authorManager.getAuthorAvatarUrl(author, function (err, avatarUrl) {
+    var infoMsg = {
+      type: "COLLABROOM",
+      data: {
+        // The Client doesn't know about USERINFO_UPDATE, use USER_NEWINFO
+        type: "USER_NEWINFO",
+        userInfo: {
+          userId: author,
+          //set a null name, when there is no name set. cause the client wants it null
+          name: message.data.userInfo.name || null,
+          colorId: message.data.userInfo.colorId,
+          avatarUrl: avatarUrl || null,    // SANDSTORM EDIT
+          userAgent: "Anonymous",
+          ip: "127.0.0.1",
+        }
       }
-    }
-  };
+    };
 
-  //Send the other clients on the pad the update message
-  client.broadcast.to(padId).json.send(infoMsg);
+    //Send the other clients on the pad the update message
+    client.broadcast.to(padId).json.send(infoMsg);
+  });
 }
 
 /**
@@ -1002,6 +1006,7 @@ function handleClientReady(client, message)
   var author;
   var authorName;
   var authorColorId;
+  var authorAvatarUrl;    // SANDSTORM EDIT
   var pad;
   var historicalAuthorData = {};
   var currentTime;
@@ -1067,6 +1072,13 @@ function handleClientReady(client, message)
                 authorManager.setAuthorSandstormId(author, sandstormId);
               }
             }
+            authorAvatarUrl = client.request.headers['x-sandstorm-user-picture'] || null;
+            if (authorAvatarUrl) {
+              authorAvatarUrl = decodeURIComponent(authorAvatarUrl);
+              if (value.avatarUrl !== authorAvatarUrl) {
+                authorManager.setAuthorAvatarUrl(author, authorAvatarUrl);
+              }
+            }
             // END SANDSTORM EDIT
             callback();
           });
@@ -1112,7 +1124,12 @@ function handleClientReady(client, message)
                 return callback();
               }
               if(ERR(err, callback)) return;
-              historicalAuthorData[authorId] = {name: author.name, colorId: author.colorId}; // Filter author attribs (e.g. don't send author's pads to all clients)
+              // Filter author attribs (e.g. don't send author's pads to all clients)
+              historicalAuthorData[authorId] = {
+                name: author.name,
+                colorId: author.colorId,
+                avatarUrl: author.avatarUrl || null    // SANDSTORM EDIT
+              };
               callback();
             });
           }, callback);
@@ -1215,6 +1232,7 @@ function handleClientReady(client, message)
           "clientIp": "127.0.0.1",
           "userIsGuest": true,
           "userColor": authorColorId,
+          "userAvatarUrl": authorAvatarUrl,   // SANDSTORM EDIT
           "padId": message.padId,
           "padOptions": settings.padOptions,
           "initialTitle": "Pad: " + message.padId,
@@ -1276,7 +1294,8 @@ function handleClientReady(client, message)
             "ip": "127.0.0.1",
             "colorId": authorColorId,
             "userAgent": "Anonymous",
-            "userId": author
+            "userId": author,
+            "avatarUrl": authorAvatarUrl    // SANDSTORM EDIT
           }
         }
       };
@@ -1331,7 +1350,8 @@ function handleClientReady(client, message)
                   "colorId": authorInfo.colorId,
                   "name": authorInfo.name,
                   "userAgent": "Anonymous",
-                  "userId": author
+                  "userId": author,
+                  "avatarUrl": authorInfo.avatarUrl    // SANDSTORM EDIT
                 }
               }
             };
