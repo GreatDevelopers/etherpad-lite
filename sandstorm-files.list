@@ -2306,7 +2306,7 @@ usr/include/sandstorm/util.capnp
 usr/lib/libv8.so.3.14.5
 usr/lib/nodejs/mime.js
 usr/lib/x86_64-linux-gnu/libcares.so.2
-usr/lib/x86_64-linux-gnu/libcares.so.2.1.0
+usr/lib/x86_64-linux-gnu/libcares.so.2.2.0
 usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0
 usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.2
 usr/lib/x86_64-linux-gnu/libicudata.so.57
