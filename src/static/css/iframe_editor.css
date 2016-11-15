@@ -77,7 +77,6 @@ body.doesWrap:not(.noprewrap) > div{
   font-size: 11px;
   font-family: monospace;
   line-height: 16px; /* overridden by sideDiv.style */
-  padding-top: 8px; /* EDIT_BODY_PADDING_TOP */
   padding-right: 3px; /* LINE_NUMBER_PADDING_RIGHT - 1 */
   position: absolute;
   width: 20px; /* MIN_LINEDIV_WIDTH */
@@ -88,6 +87,7 @@ body.doesWrap:not(.noprewrap) > div{
 }
 
 #sidedivinner {
+  padding-top: 8px; /* EDIT_BODY_PADDING_TOP */
   text-align: right;
 }
 
