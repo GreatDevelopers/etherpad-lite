@@ -148,12 +148,17 @@ CachingMiddleware.prototype = new function () {
             // Populate responseCache now. Note that we'll only ever reach this branch inside
             // Sandstorm because otherwise we would have deleted the If-Modified-Since header
             // earlier, preventing a 304 response from happening.
-            //
-            // TODO(cleanup): It seems that 304 responses are missing the Content-Type header.
-            //   This manages not to break things by virtue of the fact that only CSS and
-            //   Javascript are being cached, and the browser doesn't require correct
-            //   Content-Types for these because it already knows in context what they are.
-            //   However, it does force us to put in a hack below to force-enable gzip.
+
+            if (!headers['content-type']) {
+              // 304 responses are missing Content-Type, unfortunately. Luckily all the content
+              // we cache is either .css or .js and we can guess the type from the path.
+              if (path.endsWith(".css")) {
+                headers['content-type'] = "text/css";
+              } else if (path.endsWith(".js")) {
+                headers['content-type'] = "text/javascript";
+              }
+            }
+
             responseCache[cacheKey] = {statusCode: 200, headers: headers};
           }
 
