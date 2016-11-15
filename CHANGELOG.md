@@ -1,5 +1,18 @@
 # Sandstorm
 
+## 2016-11-15
+ * NEW: Use Sandstorm avatars for authorship in left sidebar.
+ * Fix: Font size increased from 12px to 15px.
+ * Fix: Fixed missing styling in IE.
+ * Fix: Authorship underlines no longer flicker in and out as you type.
+ * Fix: Authorship colors no longer disappear when the window is not in focus.
+ * Fix: Fixed "Unknown Author".
+ * Fix: Comments now appear inside a dedicated sidebar on the right, rather than overlaying on the document text.
+ * Fix: There is no longer an area on the right where clicks are ignored. (This was due to the comment overlay area being invisible.)
+ * Fix: Comments no longer obnoxiously expand on hover. Instead, click on a comment to expand it.
+ * Fix: Opening a comment now dismisses the corresponding notification.
+ * Fix: Clicking a notification takes you to the specific comment.
+
 ## 2016-09-20
  * Fix: Newlines are no longer randomly inserted around page boundaries or when reloading a pad in the background. However, page boundaries (when enabled) are no longer automatically computed, as these were causing the problem. You can still manually insert page boundaries with ctrl+enter. See: https://github.com/ether/ep_page_view/issues/30
  * Fix: Comment/reply desktop notifications now include body text.
