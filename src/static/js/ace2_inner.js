@@ -4786,6 +4786,8 @@ function Ace2Inner(){
     setIfNecessary(iframe.style, "left", iframePadLeft + "px");
     setIfNecessary(sideDiv.style, "width", newSideDivWidth + "px");
 
+    var comments = outerWin.document.getElementById("comments");  // SANDSTORM EDIT
+
     for (var i = 0; i < 2; i++)
     {
       var newHeight = root.clientHeight;
@@ -4812,6 +4814,10 @@ function Ace2Inner(){
       setIfNecessary(iframe.style, "height", newHeight + "px");
       setIfNecessary(iframe.style, "width", newWidth + "px");
       setIfNecessary(sideDiv.style, "height", newHeight + "px");
+
+      // SANDSTORM EDIT: Hack to make the comments sidebar be the right height.
+      if (comments) setIfNecessary(comments.style, "height", newHeight + 8 + "px");
+      // END SANDSTORM EDIT
     }
     if (browser.firefox)
     {
