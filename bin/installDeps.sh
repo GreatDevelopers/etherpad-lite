@@ -117,7 +117,7 @@ do
 done
 
 #Install plugins
-PLUGINS="ep_align ep_author_neat ep_font_color ep_font_family ep_font_size ep_headings2 ep_markdown ep_print ep_spellcheck ep_sticky_attributes ep_subscript_and_superscript"
+PLUGINS="ep_align ep_font_color ep_font_family ep_font_size ep_headings2 ep_markdown ep_print ep_spellcheck ep_sticky_attributes ep_subscript_and_superscript"
 
 npm install $PLUGINS
 for PLUGIN in $PLUGINS; do
@@ -131,6 +131,10 @@ echo -n done > node_modules/ep_page_view/.ep_initialized
 (cd node_modules && git clone https://github.com/kentonv/ep_comments.git ep_comments_page)
 (cd node_modules/ep_comments_page && npm install)
 echo -n done > node_modules/ep_comments_page/.ep_initialized
+
+(cd node_modules && git clone https://github.com/kentonv/ep_author_neat.git)
+(cd node_modules/ep_author_neat && npm install)
+echo -n done > node_modules/ep_author_neat/.ep_initialized
 
 #Install capnp
 #TODO: This is a hack. It should probably be declared as an npm dependency.
