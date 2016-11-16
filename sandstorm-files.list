@@ -2239,6 +2239,7 @@ src/static/custom/pad.js
 src/static/custom/timeslider.css
 src/static/custom/timeslider.js
 src/static/favicon.ico
+src/static/font/fontawesome-etherpad.eot
 src/static/font/fontawesome-etherpad.woff
 src/static/js
 src/static/js/AttributeManager.js
