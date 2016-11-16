@@ -36,7 +36,7 @@
 	"pad.settings.stickychat": "Chat always on screen",
 	"pad.settings.chatandusers": "Show Chat and Users",
 	"pad.settings.colorcheck": "Authorship colours",
-	"pad.settings.linenocheck": "Line numbers",
+	"pad.settings.linenocheck": "Authorship sidebar",
 	"pad.settings.rtlcheck": "Read content from right to left?",
 	"pad.settings.fontType": "Font type:",
 	"pad.settings.fontType.normal": "Normal",
