@@ -1,5 +1,11 @@
 # Sandstorm
 
+## 2016-11-16
+ * Fix: Improved performance of medium-to-large pads. Rapid keypresses will no longer lag.
+ * Fix: Comment boxes no longer blink when clicked.
+ * Fix: New-comment box no longer changes color on hover.
+ * Fix: Left sidebar extends to bottom of window (previously 8px short).
+
 ## 2016-11-15
  * NEW: Use Sandstorm avatars for authorship in left sidebar.
  * Fix: Font size increased from 12px to 15px.
