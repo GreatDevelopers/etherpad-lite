@@ -124,10 +124,6 @@ for PLUGIN in $PLUGINS; do
   echo -n done > node_modules/$PLUGIN/.ep_initialized
 done
 
-(cd node_modules && git clone https://github.com/kentonv/ep_page_view.git)
-(cd node_modules/ep_page_view && npm install)
-echo -n done > node_modules/ep_page_view/.ep_initialized
-
 (cd node_modules && git clone https://github.com/kentonv/ep_comments.git ep_comments_page)
 (cd node_modules/ep_comments_page && npm install)
 echo -n done > node_modules/ep_comments_page/.ep_initialized
