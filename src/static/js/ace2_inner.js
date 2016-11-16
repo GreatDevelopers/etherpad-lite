@@ -4813,9 +4813,10 @@ function Ace2Inner(){
       }
       setIfNecessary(iframe.style, "height", newHeight + "px");
       setIfNecessary(iframe.style, "width", newWidth + "px");
-      setIfNecessary(sideDiv.style, "height", newHeight + "px");
+      setIfNecessary(sideDiv.style, "height", newHeight + 8 + "px");
 
       // SANDSTORM EDIT: Hack to make the comments sidebar be the right height.
+      //   (Also added the + 8 on the previous line.)
       if (comments) setIfNecessary(comments.style, "height", newHeight + 8 + "px");
       // END SANDSTORM EDIT
     }
