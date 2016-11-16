@@ -23,9 +23,6 @@ var ERR = require("async-stacktrace");
 var settings = require('./Settings');
 var async = require('async');
 var fs = require('fs');
-var CleanCSS = require('clean-css');
-var jsp = require("uglify-js").parser;
-var pro = require("uglify-js").uglify;
 var path = require('path');
 var plugins = require("ep_etherpad-lite/static/js/pluginfw/plugins");
 var RequireKernel = require('etherpad-require-kernel');
@@ -373,16 +370,9 @@ function getFileCompressed(filename, contentType, callback) {
   getFile(filename, function (error, content) {
     if (error || !content || !settings.minify) {
       callback(error, content);
-    } else if (contentType == 'text/javascript') {
-      try {
-        content = compressJS(content);
-      } catch (error) {
-        // silence
-      }
-      callback(null, content);
-    } else if (contentType == 'text/css') {
-      compressCSS(filename, content, callback);
     } else {
+      // SANDSTORM EDIT: We've dropped the minification here so that we don't have to parse that
+      //   code at runtime. Instead we expect everything to be minified as a build step.
       callback(null, content);
     }
   });
@@ -395,32 +385,6 @@ function getFile(filename, callback) {
     callback(undefined, requireDefinition());
   } else {
     fs.readFile(ROOT_DIR + filename, callback);
-  }
-}
-
-function compressJS(content)
-{
-  var ast = jsp.parse(content); // parse code and get the initial AST
-  ast = pro.ast_mangle(ast); // get a new AST with mangled names
-  ast = pro.ast_squeeze(ast); // get an AST with compression optimizations
-  return pro.gen_code(ast); // compressed code here
-}
-
-function compressCSS(filename, content, callback)
-{
-  try {
-    var base = path.join(ROOT_DIR, path.dirname(filename));
-    new CleanCSS({relativeTo: base}).minify(content, function (errors, minified) {
-      if (errors) {
-        // On error, just yield the un-minified original.
-        callback(null, content);
-      } else {
-        callback(null, minified.styles);
-      }
-    });
-  } catch (error) {
-    // On error, just yield the un-minified original.
-    callback(null, content);
   }
 }
 
