@@ -19,9 +19,9 @@ const pkgdef :Spk.PackageDefinition = (
 
     appTitle = (defaultText = "Etherpad"),
 
-    appVersion = 18,  # Increment this for every release.
+    appVersion = 19,  # Increment this for every release.
     
-    appMarketingVersion = (defaultText = "1.6.0~2016-11-16"),
+    appMarketingVersion = (defaultText = "1.6.0~2016-11-17"),
 
     actions = [
       # Define your "new document" handlers here.

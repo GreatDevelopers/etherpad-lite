@@ -1,5 +1,12 @@
 # Sandstorm
 
+## 2016-11-17
+ * Fix: Improved load time by correctly minifying assets and by removing dead code from server.
+ * Fix: Fixed console error spam when copy/pasting on Chrome.
+ * Fix: Removed ep_page_view plugin which never really worked and has introduced too many problems. Should improve load time.
+ * Fix: Fixed large left margin that sometimes appeared at certain medium-sized window widths. (This was caused by ep_page_view.)
+ * Fix: Copy/pasting from a pad into other programs (e.g. Gmail) no longer puts large margins around pasted content. (This was caused by ep_page_view.)
+
 ## 2016-11-16
  * Fix: Improved performance of medium-to-large pads. Rapid keypresses will no longer lag.
  * Fix: Comment boxes no longer blink when clicked.
