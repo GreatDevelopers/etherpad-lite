@@ -6,6 +6,8 @@
  * Fix: Removed ep_page_view plugin which never really worked and has introduced too many problems. Should improve load time.
  * Fix: Fixed large left margin that sometimes appeared at certain medium-sized window widths. (This was caused by ep_page_view.)
  * Fix: Copy/pasting from a pad into other programs (e.g. Gmail) no longer puts large margins around pasted content. (This was caused by ep_page_view.)
+ * Fix: Sidebar author color bars are now solid through blank lines. Previously blank lines would cause a break in the bar.
+ * Fix: Typing one character into a previously-unattributed paragraph no longer makes you show up as the author of the whole paragraph.
 
 ## 2016-11-16
  * Fix: Improved performance of medium-to-large pads. Rapid keypresses will no longer lag.
