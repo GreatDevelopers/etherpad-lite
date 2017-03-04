@@ -1,5 +1,10 @@
 # Sandstorm
 
+## 2017-03-03
+ * Updated to upstream Etherpad 1.6.1.
+ * Allow HTTP API requests to be authorized based on Sandstorm permissions. (Currently only
+   read-only request are supported.)
+
 ## 2016-11-17
  * Fix: Improved load time by correctly minifying assets and by removing dead code from server.
  * Fix: Fixed console error spam when copy/pasting on Chrome.

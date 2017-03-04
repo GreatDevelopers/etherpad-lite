@@ -19,9 +19,9 @@ const pkgdef :Spk.PackageDefinition = (
 
     appTitle = (defaultText = "Etherpad"),
 
-    appVersion = 20,  # Increment this for every release.
+    appVersion = 21,  # Increment this for every release.
     
-    appMarketingVersion = (defaultText = "1.6.0~2016-11-17"),
+    appMarketingVersion = (defaultText = "1.6.1~2017-03-03"),
 
     actions = [
       # Define your "new document" handlers here.
@@ -77,7 +77,7 @@ const pkgdef :Spk.PackageDefinition = (
     searchPath = [
       ( sourcePath = "." ),  # Search this directory first.
       ( sourcePath = "/",    # Then search the system root directory.
-        hidePaths = [ "home", "proc", "sys" ]
+        hidePaths = [ "home", "proc", "sys", "etc/passwd" ]
         # You probably don't want the app pulling files from these places,
         # so we hide them. Note that /dev, /var, and /tmp are implicitly
         # hidden because Sandstorm itself provides them.
@@ -135,5 +135,6 @@ const myCommand :Spk.Manifest.Command = (
     # Note that this defines the *entire* environment seen by your app.
     (key = "PATH", value = "/usr/local/bin:/usr/bin:/bin"),
     (key = "SANDSTORM", value = "1"),
+    (key = "HOME", value = "/var"),  # Etherpad imports `npm` which crashes on start without this.
   ]
 );
