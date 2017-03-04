@@ -25,18 +25,6 @@ var api = require("../db/API");
 var padManager = require("../db/PadManager");
 var randomString = require("../utils/randomstring");
 
-//ensure we have an apikey
-var apikey = null;
-try
-{
-  apikey = fs.readFileSync("./APIKEY.txt","utf8");
-}
-catch(e)
-{
-  apikey = randomString(32);
-  fs.writeFileSync("./APIKEY.txt",apikey,"utf8");
-}
-
 //a list of all functions
 var version =
 { "1":
@@ -497,6 +485,25 @@ var version =
   }
 };
 
+var requiredSandstormPermissions = {
+  // Permissions needed for each command. There is no explicit "read" permission but [] means
+  // "basic permission to open the grain", which suits our needs.
+  //
+  // Commands that aren't listed cannot be used on Sandstorm.
+
+  getText: [],
+  getHTML: [],
+  getRevisionCount: [],
+  getLastEdited: [],
+  padUsersCount: [],
+
+  // TODO(someday): We should support editing through the API too, but the edits ought to be
+  //   attributed to the author. Etherpad's API currently doesn't seem to be designed for this;
+  //   it's instead intended to be full-control.
+//  setText: ["modify"],
+//  getHTML: ["modify"],
+};
+
 // set the latest available API version here
 exports.latestApiVersion = '1.2.13';
 
@@ -549,14 +556,30 @@ exports.handle = function(apiVersion, functionName, fields, req, res)
     return;
   }
 
-  //check the api key!
-  fields["apikey"] = fields["apikey"] || fields["api_key"];
-
-  if(fields["apikey"] != apikey.trim())
+  var permissions = requiredSandstormPermissions[functionName];
+  if (!permissions)
   {
-    res.statusCode = 401;
-    res.send({code: 4, message: "no or wrong API Key", data: null});
+    res.send({code: 3, message: "function not available on Sandstorm", data: null});
     return;
+  }
+
+  var hasPermissions = (req.headers["x-sandstorm-permissions"] || "")
+      .split(",").map(x => x.trim()).filter(x => x);
+  console.log(permissions, hasPermissions);
+
+  for (var i = 0; i < permissions.length; i++) {
+    var satisfied = false;
+    for (var j = 0; j < hasPermissions.length; j++) {
+      if (permissions[i] === hasPermissions[i]) {
+        satisfied = true;
+        break;
+      }
+    }
+    if (!satisfied) {
+      res.statusCode = 401;
+      res.send({code: 4, message: "insufficient permissions", data: null});
+      return;
+    }
   }
 
   //sanitize any pad id's before continuing
