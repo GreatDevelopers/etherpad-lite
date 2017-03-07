@@ -1,5 +1,8 @@
 # Sandstorm
 
+## 2017-03-07
+ * Fixed lists (e.g. bullet lists, numbered lists) not being styled correctly.
+
 ## 2017-03-03
  * Updated to upstream Etherpad 1.6.1.
  * Allow HTTP API requests to be authorized based on Sandstorm permissions. (Currently only
