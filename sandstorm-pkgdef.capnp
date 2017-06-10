@@ -62,7 +62,8 @@ const pkgdef :Spk.PackageDefinition = (
       shortDescription = (defaultText = "Document editor"),
 
       screenshots = [
-        (width = 448, height = 343, png = embed "sandstorm-screenshot.png")
+        (width = 1280, height = 614, png = embed "screenshot_etherpad_index.png"),
+        (width = 1280, height = 614, png = embed "screenshot_etherpad_history.png")
       ],
 
       changeLog = (defaultText = embed "CHANGELOG.md"),
