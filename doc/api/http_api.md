@@ -3,42 +3,46 @@
 ## What can I do with this API?
 The API gives another web application control of the pads. The basic functions are
 
-* create/delete pads 
+* create/delete pads
 * grant/forbid access to pads
 * get/set pad content
 
 The API is designed in a way, so you can reuse your existing user system with their permissions, and map it to Etherpad. Means: Your web application still has to do authentication, but you can tell Etherpad via the api, which visitors should get which permissions. This allows Etherpad to fit into any web application and extend it with real-time functionality. You can embed the pads via an iframe into your website.
 
-Take a look at [HTTP API client libraries](https://github.com/ether/etherpad-lite/wiki/HTTP-API-client-libraries) to see if a library in your favorite language.
+Take a look at [HTTP API client libraries](https://github.com/ether/etherpad-lite/wiki/HTTP-API-client-libraries) to check if a library in your favorite programming language is available.
+
+### OpenAPI
+
+OpenAPI (formerly swagger) definitions are exposed under `/api/openapi.json` (latest) and `/api/{version}/openapi.json`. You can use official tools like [Swagger Editor](https://editor.swagger.io/) to view and explore them.
 
 ## Examples
 
 ### Example 1
 
-A portal (such as WordPress) wants to give a user access to a new pad. Let's assume the user have the internal id 7 and his name is michael. 
+A portal (such as WordPress) wants to give a user access to a new pad. Let's assume the user have the internal id 7 and his name is michael.
 
-Portal maps the internal userid to an etherpad author. 
+Portal maps the internal userid to an etherpad author.
 
 > Request: `http://pad.domain/api/1/createAuthorIfNotExistsFor?apikey=secret&name=Michael&authorMapper=7`
-> 
+>
 > Response: `{code: 0, message:"ok", data: {authorID: "a.s8oes9dhwrvt0zif"}}`
 
 Portal maps the internal userid to an etherpad group:
 
 > Request: `http://pad.domain/api/1/createGroupIfNotExistsFor?apikey=secret&groupMapper=7`
-> 
+>
 > Response: `{code: 0, message:"ok", data: {groupID: "g.s8oes9dhwrvt0zif"}}`
 
 Portal creates a pad in the userGroup
 
 > Request: `http://pad.domain/api/1/createGroupPad?apikey=secret&groupID=g.s8oes9dhwrvt0zif&padName=samplePad&text=This is the first sentence in the pad`
-> 
+>
 > Response: `{code: 0, message:"ok", data: null}`
 
 Portal starts the session for the user on the group:
 
 > Request: `http://pad.domain/api/1/createSession?apikey=secret&groupID=g.s8oes9dhwrvt0zif&authorID=a.s8oes9dhwrvt0zif&validUntil=1312201246`
-> 
+>
 > Response: `{"data":{"sessionID": "s.s8oes9dhwrvt0zif"}}`
 
 Portal places the cookie "sessionID" with the given value on the client and creates an iframe including the pad.
@@ -50,7 +54,7 @@ A portal (such as WordPress) wants to transform the contents of a pad that multi
 Portal retrieves the contents of the pad for entry into the db as a blog post:
 
 > Request: `http://pad.domain/api/1/getText?apikey=secret&padID=g.s8oes9dhwrvt0zif$123`
-> 
+>
 > Response: `{code: 0, message:"ok", data: {text:"Welcome Text"}}`
 
 Portal submits content into new blog post
@@ -61,18 +65,39 @@ Portal submits content into new blog post
 ## Usage
 
 ### API version
-The latest version is `1.2.13`
+The latest version is `1.2.14`
 
 The current version can be queried via /api.
 
 ### Request Format
 
-The API is accessible via HTTP. HTTP Requests are in the format /api/$APIVERSION/$FUNCTIONNAME. Parameters are transmitted via HTTP GET. $APIVERSION depends on the endpoints you want to use.
+The API is accessible via HTTP. Starting from **1.8**, API endpoints can be invoked indifferently via GET or POST.
+
+The URL of the HTTP request is of the form: `/api/$APIVERSION/$FUNCTIONNAME`. $APIVERSION depends on the endpoint you want to use. Depending on the verb you use (GET or POST) **parameters** can be passed differently.
+
+When invoking via GET (mandatory until **1.7.5** included), parameters must be included in the query string (example: `/api/$APIVERSION/$FUNCTIONNAME?apikey=<APIKEY>&param1=value1`). Please note that starting with nodejs 8.14+ the total size of HTTP request headers has been capped to 8192 bytes. This limits the quantity of data that can be sent in an API request.
+
+Starting from Etherpad **1.8** it is also possible to invoke the HTTP API via POST. In this case, querystring parameters will still be accepted, but **any parameter with the same name sent via POST will take precedence**. If you need to send large chunks of text (for example, for `setText()`) it is advisable to invoke via POST.
+
+Example with cURL using GET (toy example, no encoding):
+```
+curl "http://pad.domain/api/1/setText?apikey=secret&padID=padname&text=this_text_will_NOT_be_encoded_by_curl_use_next_example"
+```
+
+Example with cURL using GET (better example, encodes text):
+```
+curl "http://pad.domain/api/1/setText?apikey=secret&padID=padname" --get --data-urlencode "text=Text sent via GET with proper encoding. For big documents, please use POST"
+```
+
+Example with cURL using POST:
+```
+curl "http://pad.domain/api/1/setText?apikey=secret&padID=padname" --data-urlencode "text=Text sent via POST with proper encoding. For big texts (>8 KB), use this method"
+```
 
 ### Response Format
 Responses are valid JSON in the following format:
 
-```js
+```json
 {
   "code": number,
   "message": string,
@@ -86,35 +111,35 @@ Responses are valid JSON in the following format:
   * **2** internal error
   * **3** no such function
   * **4** no or wrong API Key
-* **message** a status message. Its ok if everything is fine, else it contains an error message
+* **message** a status message. It's ok if everything is fine, else it contains an error message
 * **data** the payload
 
 ### Overview
 
-![API Overview](http://i.imgur.com/d0nWp.png)
+![API Overview](https://i.imgur.com/d0nWp.png)
 
 ## Data Types
 
 * **groupID**  a string, the unique id of a group. Format is g.16RANDOMCHARS, for example g.s8oes9dhwrvt0zif
 * **sessionID** a string, the unique id of a session. Format is s.16RANDOMCHARS, for example s.s8oes9dhwrvt0zif
 * **authorID** a string, the unique id of an author. Format is a.16RANDOMCHARS, for example a.s8oes9dhwrvt0zif
-* **readOnlyID** a string, the unique id of an readonly relation to a pad. Format is r.16RANDOMCHARS, for example r.s8oes9dhwrvt0zif
+* **readOnlyID** a string, the unique id of a readonly relation to a pad. Format is r.16RANDOMCHARS, for example r.s8oes9dhwrvt0zif
 * **padID** a string, format is GROUPID$PADNAME, for example the pad test of group g.s8oes9dhwrvt0zif has padID g.s8oes9dhwrvt0zif$test
 
 ### Authentication
 
-Authentication works via a token that is sent with each request as a post parameter.  There is a single token per Etherpad deployment.  This token will be random string, generated by Etherpad at the first start. It will be saved in APIKEY.txt in the root folder of Etherpad. Only Etherpad and the requesting application knows this key. Token management will not be exposed through this API. 
+Authentication works via a token that is sent with each request as a post parameter.  There is a single token per Etherpad deployment.  This token will be random string, generated by Etherpad at the first start. It will be saved in APIKEY.txt in the root folder of Etherpad. Only Etherpad and the requesting application knows this key. Token management will not be exposed through this API.
 
 ### Node Interoperability
 
-All functions will also be available through a node module accessable from other node.js applications.
+All functions will also be available through a node module accessible from other node.js applications.
 
 ### JSONP
 
 The API provides _JSONP_ support to allow requests from a server in a different domain.
 Simply add `&jsonp=?` to the API call.
 
-Example usage: http://api.jquery.com/jQuery.getJSON/
+Example usage: https://api.jquery.com/jQuery.getJSON/
 
 ## API Methods
 
@@ -123,7 +148,7 @@ Pads can belong to a group. The padID of grouppads is starting with a groupID li
 
 #### createGroup()
  * API >= 1
- 
+
 creates a new group
 
 *Example returns:*
@@ -132,7 +157,7 @@ creates a new group
 #### createGroupIfNotExistsFor(groupMapper)
  * API >= 1
 
-this functions helps you to map your application group ids to Etherpad group ids 
+this functions helps you to map your application group ids to Etherpad group ids
 
 *Example returns:*
   * `{code: 0, message:"ok", data: {groupID: g.s8oes9dhwrvt0zif}}`
@@ -175,7 +200,7 @@ lists all existing groups
   * `{code: 0, message:"ok", data: {groupIDs: []}}`
 
 ### Author
-These authors are bound to the attributes the users choose (color and name). 
+These authors are bound to the attributes the users choose (color and name).
 
 #### createAuthor([name])
  * API >= 1
@@ -188,7 +213,7 @@ creates a new author
 #### createAuthorIfNotExistsFor(authorMapper [, name])
  * API >= 1
 
-this functions helps you to map your application author ids to Etherpad author ids 
+this functions helps you to map your application author ids to Etherpad author ids
 
 *Example returns:*
   * `{code: 0, message:"ok", data: {authorID: "a.s8oes9dhwrvt0zif"}}`
@@ -213,7 +238,7 @@ Returns the Author Name of the author
 -> can't be deleted cause this would involve scanning all the pads where this author was
 
 ### Session
-Sessions can be created between a group and an author. This allows an author to access more than one group. The sessionID will be set as a cookie to the client and is valid until a certain date. The session cookie can also contain multiple comma-seperated sessionIDs, allowing a user to edit pads in different groups at the same time. Only users with a valid session for this group, can access group pads. You can create a session after you authenticated the user at your web application, to give them access to the pads. You should save the sessionID of this session and delete it after the user logged out.
+Sessions can be created between a group and an author. This allows an author to access more than one group. The sessionID will be set as a cookie to the client and is valid until a certain date. The session cookie can also contain multiple comma-separated sessionIDs, allowing a user to edit pads in different groups at the same time. Only users with a valid session for this group, can access group pads. You can create a session after you authenticated the user at your web application, to give them access to the pads. You should save the sessionID of this session and delete it after the user logged out.
 
 #### createSession(groupID, authorID, validUntil)
  * API >= 1
@@ -278,7 +303,9 @@ returns the text of a pad
 #### setText(padID, text)
  * API >= 1
 
-sets the text of a pad
+Sets the text of a pad.
+
+If your text is long (>8 KB), please invoke via POST and include `text` parameter in the body of the request, not in the URL (since Etherpad **1.8**).
 
 *Example returns:*
   * `{code: 0, message:"ok", data: null}`
@@ -288,7 +315,9 @@ sets the text of a pad
 #### appendText(padID, text)
  * API >= 1.2.13
 
-appends text to a pad
+Appends text to a pad.
+
+If your text is long (>8 KB), please invoke via POST and include `text` parameter in the body of the request, not in the URL (since Etherpad **1.8**).
 
 *Example returns:*
   * `{code: 0, message:"ok", data: null}`
@@ -307,7 +336,9 @@ returns the text of a pad formatted as HTML
 #### setHTML(padID, html)
  * API >= 1
 
-sets the text of a pad based on HTML, HTML must be well formed. Malformed HTML will send a warning to the API log.
+sets the text of a pad based on HTML, HTML must be well-formed. Malformed HTML will send a warning to the API log.
+
+If `html` is long (>8 KB), please invoke via POST and include `html` parameter in the body of the request, not in the URL (since Etherpad **1.8**).
 
 *Example returns:*
   * `{code: 0, message:"ok", data: null}`
@@ -349,7 +380,7 @@ get the changeset at a given revision, or last revision if 'rev' is not defined.
 *Example returns:*
   * `{ "code" : 0,
        "message" : "ok",
-       "data" : "Z:1>6b|5+6b$Welcome to Etherpad!\n\nThis pad text is synchronized as you type, so that everyone viewing this page sees the same text. This allows you to collaborate seamlessly on documents!\n\nGet involved with Etherpad at http://etherpad.org\n"
+       "data" : "Z:1>6b|5+6b$Welcome to Etherpad!\n\nThis pad text is synchronized as you type, so that everyone viewing this page sees the same text. This allows you to collaborate seamlessly on documents!\n\nGet involved with Etherpad at https://etherpad.org\n"
      }`
   * `{"code":1,"message":"padID does not exist","data":null}`
   * `{"code":1,"message":"rev is higher than the head revision of the pad","data":null}`
@@ -379,7 +410,7 @@ Restores revision from past as new changeset
 returns
 
 * a part of the chat history, when `start` and `end` are given
-* the whole chat histroy, when no extra parameters are given
+* the whole chat history, when no extra parameters are given
 
 
 *Example returns:*
@@ -411,7 +442,7 @@ creates a chat message, saves it to the database and sends it to all connected c
 * `{code: 1, message:"text is no string", data: null}`
 
 ### Pad
-Group pads are normal pads, but with the name schema GROUPID$PADNAME. A security manager controls access of them and its forbidden for normal pads to include a $ in the name. 
+Group pads are normal pads, but with the name schema GROUPID$PADNAME. A security manager controls access of them and it's forbidden for normal pads to include a $ in the name.
 
 #### createPad(padID [, text])
  * API >= 1
@@ -543,7 +574,7 @@ return true of false
 #### setPassword(padID, password)
  * API >= 1
 
-returns ok or a error message
+returns ok or an error message
 
 *Example returns:*
   * `{code: 0, message:"ok", data: null}`
@@ -575,7 +606,7 @@ returns the timestamp of the last revision of the pad
 *Example returns:*
   * `{code: 0, message:"ok", data: {lastEdited: 1340815946602}}`
   * `{code: 1, message:"padID does not exist", data: null}`
-  
+
 #### sendClientsMessage(padID, msg)
  * API >= 1.1
 
@@ -598,8 +629,19 @@ returns ok when the current api token is valid
 
 #### listAllPads()
  * API >= 1.2.1
- 
+
 lists all pads on this epl instance
 
 *Example returns:*
  * `{code: 0, message:"ok", data: {padIDs: ["testPad", "thePadsOfTheOthers"]}}`
+
+### Global
+
+#### getStats()
+ *  API >= 1.2.14
+
+get stats of the etherpad instance
+
+*Example returns*
+ * `{"code":0,"message":"ok","data":{"totalPads":3,"totalSessions": 2,"totalActivePads": 1}}`
+

@@ -23,15 +23,24 @@ var ERR = require("async-stacktrace");
 var settings = require('./Settings');
 var async = require('async');
 var fs = require('fs');
+var StringDecoder = require('string_decoder').StringDecoder;
 var path = require('path');
-var plugins = require("ep_etherpad-lite/static/js/pluginfw/plugins");
+var plugins = require("ep_etherpad-lite/static/js/pluginfw/plugin_defs");
 var RequireKernel = require('etherpad-require-kernel');
 var urlutil = require('url');
+var mime = require('mime-types')
+var Threads = require('threads')
+var log4js = require('log4js');
+
+var logger = log4js.getLogger("Minify");
 
 var ROOT_DIR = path.normalize(__dirname + "/../../static/");
 var TAR_PATH = path.join(__dirname, 'tar.json');
 var tar = JSON.parse(fs.readFileSync(TAR_PATH, 'utf8'));
 
+var threadsPool = Threads.Pool(function () {
+  return Threads.spawn(new Threads.Worker("./MinifyWorker"))
+}, 2)
 
 var LIBRARY_WHITELIST = [
       'async'
@@ -67,7 +76,7 @@ for (var key in tar) {
 
 // What follows is a terrible hack to avoid loop-back within the server.
 // TODO: Serve files from another service, or directly from the file system.
-function requestURI(url, method, headers, callback, redirectCount) {
+function requestURI(url, method, headers, callback) {
   var parsedURL = urlutil.parse(url);
 
   var status = 500, headers = {}, content = [];
@@ -134,7 +143,7 @@ function requestURIs(locations, method, headers, callback) {
  * @param req the Express request
  * @param res the Express response
  */
-function minify(req, res, next)
+function minify(req, res)
 {
   var filename = req.params['filename'];
 
@@ -174,34 +183,16 @@ function minify(req, res, next)
     }
   }
 
-  // What content type should this be?
-  // TODO: This should use a MIME module.
-  var contentType;
-  if (filename.match(/\.js$/)) {
-    contentType = "text/javascript";
-  } else if (filename.match(/\.css$/)) {
-    contentType = "text/css";
-  } else if (filename.match(/\.html$/)) {
-    contentType = "text/html";
-  } else if (filename.match(/\.txt$/)) {
-    contentType = "text/plain";
-  } else if (filename.match(/\.png$/)) {
-    contentType = "image/png";
-  } else if (filename.match(/\.gif$/)) {
-    contentType = "image/gif";
-  } else if (filename.match(/\.ico$/)) {
-    contentType = "image/x-icon";
-  } else {
-    contentType = "application/octet-stream";
-  }
+  var contentType = mime.lookup(filename);
 
   statFile(filename, function (error, date, exists) {
     if (date) {
       date = new Date(date);
+      date.setMilliseconds(0);
       res.setHeader('last-modified', date.toUTCString());
       res.setHeader('date', (new Date()).toUTCString());
       if (settings.maxAge !== undefined) {
-        var expiresDate = new Date((new Date()).getTime()+settings.maxAge*1000);
+        var expiresDate = new Date(Date.now()+settings.maxAge*1000);
         res.setHeader('expires', expiresDate.toUTCString());
         res.setHeader('cache-control', 'max-age=' + settings.maxAge);
       }
@@ -237,7 +228,7 @@ function minify(req, res, next)
         res.end();
       }
     }
-  });
+  }, 3);
 }
 
 // find all includes in ace.js and embed them.
@@ -261,7 +252,8 @@ function getAceFile(callback) {
     async.forEach(founds, function (item, callback) {
       var filename = item.match(/"([^"]*)"/)[1];
 
-      var baseURI = 'http://localhost:' + settings.port;
+      // Hostname "invalid.invalid" is a dummy value to allow parsing as a URI.
+      var baseURI = 'http://invalid.invalid';
       var resourceURI = baseURI + path.normalize(path.join('/static/', filename));
       resourceURI = resourceURI.replace(/\\/g, '/'); // Windows (safe generally?)
 
@@ -271,7 +263,7 @@ function getAceFile(callback) {
           data += 'Ace2Editor.EMBEDED[' + JSON.stringify(filename) + '] = '
               +  JSON.stringify(status == 200 ? body || '' : null) + ';\n';
         } else {
-          // Silence?
+          console.error(`getAceFile(): error getting ${resourceURI}. Status code: ${status}`);
         }
         callback();
       });
@@ -283,6 +275,10 @@ function getAceFile(callback) {
 
 // Check for the existance of the file and get the last modification date.
 function statFile(filename, callback, dirStatLimit) {
+  /*
+   * The only external call to this function provides an explicit value for
+   * dirStatLimit: this check could be removed.
+   */
   if (typeof dirStatLimit === 'undefined') {
     dirStatLimit = 3;
   }

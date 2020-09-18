@@ -88,7 +88,177 @@
 
 # Upstream
 
-#1.6.1
+# Develop -- TODO Change to 1.8.x.
+* ...
+
+# 1.8.5
+* IMPORTANT DROP OF SUPPORT: Drop support for IE.  Browsers now need async/await.
+* IMPORTANT SECURITY: Rate limit Commits when env=production
+* SECURITY: Non completed uploads no longer crash Etherpad
+* SECURITY: Log authentication requests
+* FEATURE: Support ES6 (migrate from Uglify-JS to Terser)
+* FEATURE: Improve support for non-cookie enabled browsers
+* FEATURE: New hooks for ``index.html``
+* FEATURE: New script to delete sessions.
+* FEATURE: New setting to allow import withing an author session on a pad
+* FEATURE: Checks Etherpad version on startup and notifies if update is available.  Also available in ``/admin`` interface.
+* FEATURE: Timeslider updates pad location to most recent edit
+* MINOR: Outdent UL/LI items on removal of list item
+* MINOR: Various UL/LI import/export bugs
+* MINOR: PDF export fix
+* MINOR: Front end tests no longer run (and subsequently error) on pull requests
+* MINOR: Fix issue with </li> closing a list before it opens
+* MINOR: Fix bug where large pads would fire a console error in timeslider
+* MINOR: Fix ?showChat URL param issue
+* MINOR: Issue where timeslider URI fails to be correct if padID is numeric
+* MINOR: Include prompt for clear authorship when entire document is selected
+* MINOR: Include full document aText every 100 revisions to make pad restoration on database curruption achievable
+* MINOR: Several Colibris CSS fixes
+* MINOR: Use mime library for mime types instead of hard-coded.
+* MINOR: Don't show "new pad button" if instance is read only
+* MINOR: Use latest NodeJS when doing Windows build
+* MINOR: Change disconnect logic to reconnect instead of silently failing
+* MINOR: Update SocketIO, async, jQuery and Mocha which were stuck due to stale code.
+* MINOR: Rewrite the majority of the ``bin`` scripts to use more modern syntax
+* MINOR: Improved CSS anomation through prefers-reduced-motion
+* PERFORMANCE: Use workers (where possible) to minify CSS/JS on first page request.  This improves initial startup times.
+* PERFORMANCE: Cache EJS files improving page load speed when maxAge > 0.
+* PERFORMANCE: Fix performance for large pads
+* TESTS: Additional test coverage for OL/LI/Import/Export
+* TESTS: Include Simulated Load Testing in CI.
+* TESTS: Include content collector tests to test contentcollector.js logic external to pad dependents.
+* TESTS: Include fuzzing import test.
+* TESTS: Ensure CI is no longer using any cache
+* TESTS: Fix various tests...
+* TESTS: Various additional Travis testing including libreoffice import/export
+
+# 1.8.4
+* FIX: fix a performance regression on MySQL introduced in 1.8.3
+* FIX: when running behind a reverse proxy and exposed in an inner directory, fonts and toolbar icons should now be visible. This is a regression introduced in 1.8.3
+* FIX: cleanups in the UI after the CSS rehaul of 1.8.3
+* MINOR: protect against bugged/stale UI elements after updates. An explicit cache busting via random query string is performed at each start. This needs to be replaced with hashed names in static assets.
+* MINOR: improved some tests
+* MINOR: fixed long-standing bugs in the maintenance tools in /bin (migrateDirtyDBtoRealDB, rebuildPad, convert, importSqlFile)
+
+# 1.8.3
+* FEATURE: colibris is now the default skin for new installs
+* FEATURE: improved colibris visuals, and migrated to Flexbox layout
+* FEATURE: skin variants: colibris skin colors can be easily customized. Visit http://127.0.0.1:9001/p/test#skinvariantsbuilder
+* REQUIREMENTS: minimum required Node version is **10.13.0 LTS**.
+* MINOR: stability fixes for the async migration in 1.8.0 (fixed many UnhandledPromiseRejectionWarning and the few remaining crashes)
+* MINOR: improved stability of import/export functionality
+* MINOR: fixed many small UI quirks (timeslider, import/export, chat)
+* MINOR: Docker images are now built & run in production mode by default
+* MINOR: reduced the size of the Docker images
+* MINOR: better documented cookies and configuration parameters of the Docker image
+* MINOR: better database support (especially MySQL)
+* MINOR: additional test coverage
+* MINOR: restored compatibility with ep_hash_auth
+* MINOR: migrate from swagger-node-express to openapi-backend
+* MINOR: honor the Accept-Language HTTP headers sent by browsers, eventually serving language variants
+* PERFORMANCE: correctly send HTTP/304 for minified files
+* SECURITY: bumped many dependencies. At the time of the release, this version has 0 reported vulnerabilities by npm audit
+* SECURITY: never send referrer when opening a link
+* SECURITY: rate limit imports and exports
+* SECURITY: do not allow pad import if a user never contributed to that pad
+* SECURITY: expose configuration parameter for limiting max import size
+
+*BREAKING CHANGE*: undoing the "clear authorship colors" command is no longer supported (see https://github.com/ether/etherpad-lite/issues/2802)
+*BREAKING CHANGE*: the visuals and CSS structure of the page was updated. Plugins may need a CSS rehaul
+
+# 1.8
+* SECURITY: change referrer policy so that Etherpad addresses aren't leaked when links are clicked (discussion: https://github.com/ether/etherpad-lite/pull/3636)
+* SECURITY: set the "secure" flag for the session cookies when served over SSL. From now on it will not be possible to serve the same instance both in cleartext and over SSL
+
+# 1.8-beta.1
+* FEATURE: code was migrated to `async`/`await`, getting rid of a lot of callbacks (see https://github.com/ether/etherpad-lite/issues/3540)
+* FEATURE: support configuration via environment variables
+* FEATURE: include an official Dockerfile in the main repository
+* FEATURE: support including plugins in custom Docker builds
+* FEATURE: conditional creation of users: when its password is null, a user is not created. This helps, for example, in advanced configuration of Docker images.
+* REQUIREMENTS: minimum required Node version is **8.9.0 LTS**. Release 1.8.3 will require at least Node **10.13.0** LTS
+* MINOR: in the HTTP API, allow URL parameters and POST bodies to co-exist
+* MINOR: fix Unicode bug in HTML export
+* MINOR: bugfixes to colibris chat window
+* MINOR: code simplification (avoided double negations, introduced early exits, ...)
+* MINOR: reduced the size of the Windows package
+* MINOR: upgraded the nodejs runtime to 10.16.3 in the Windows package
+* SECURITY: avoided XSS in IE11
+* SECURITY: the version is exposed in http header only when configured
+* SECURITY: updated vendored jQuery version
+* SECURITY: bumped dependencies
+
+# 1.7.5
+* FEATURE: introduced support for multiple skins. See https://etherpad.org/doc/v1.7.5/#index_skins
+* FEATURE: added a new, optional skin. It can be activated choosing `skinName: "colibris"` in `settings.json`
+* FEATURE: allow file import using LibreOffice
+* SECURITY: updated many dependencies. No known high or moderate risk dependencies remain.
+* SECURITY: generate better random pad names
+* FIX: don't nuke all installed plugins if `npm install` fails
+* FIX: improved LibreOffice export
+* FIX: allow debug mode on node versions >= 6.3
+* MINOR: started making Etherpad less dependent on current working directory when running
+* MINOR: started simplifying the code structure, flattening complex conditions
+* MINOR: simplified a bit the startup scripts
+
+*UPGRADE NOTES*: if you have custom files in `src/static/custom`, save them
+somewhere else, revert the directory contents, update to Etherpad 1.7.5, and
+finally put them back in their new location, uder `src/static/skins/no-skin`.
+
+# 1.7.0
+* FIX: `getLineHTMLForExport()` no longer produces multiple copies of a line. **WARNING**: this could potentially break some plugins
+* FIX: authorship of bullet points no longer changes when a second author edits them
+* FIX: improved Firefox compatibility (non printable keys)
+* FIX: `getPadPlainText()` was not working
+* REQUIREMENTS: minimum required Node version is 6.9.0 LTS. The next release will require at least Node 8.9.0 LTS
+* SECURITY: updated MySQL, Elasticsearch and PostgreSQL drivers
+* SECURITY: started updating deprecated code and packages
+* DOCS: documented --credentials, --apikey, --sessionkey. Better detailed contributors guidelines. Added a section on securing the installation
+
+# 1.6.6
+ * FIX: line numbers are aligned with text again (broken in 1.6.4)
+ * FIX: text entered between connection loss and reconnection was not saved
+ * FIX: diagnostic call failed when etherpad was exposed in a subdirectory
+
+# 1.6.5
+ * SECURITY: Escape data when listing available plugins
+ * FIX: Fix typo in apicalls.js which prevented importing isValidJSONPName
+ * FIX: fixed plugin dependency issue
+ * FIX: Update iframe_editor.css
+ * FIX: unbreak Safari iOS line wrapping
+
+# 1.6.4
+ * SECURITY: Access Control bypass on /admin - CVE-2018-9845
+ * SECURITY: Remote Code Execution through pad export - CVE-2018-9327
+ * SECURITY: Remote Code Execution through JSONP handling - CVE-2018-9326
+ * SECURITY: Pad data leak - CVE-2018-9325
+ * Fix: Admin redirect URL
+ * Fix: Various script Fixes
+ * Fix: Various CSS/Style/Layout fixes
+ * NEW: Improved Pad contents readability
+ * NEW: Hook: onAccessCheck
+ * NEW: SESSIONKEY and APIKey customizable path
+ * NEW: checkPads script
+ * NEW: Support "cluster mode"
+
+# 1.6.3
+ * SECURITY: Update ejs
+ * SECURITY: xss vulnerability when reading window.location.href
+ * SECURITY: sanitize jsonp
+ * NEW: Catch SIGTERM for graceful shutdown
+ * NEW: Show actual applied text formatting for caret position
+ * NEW: Add settings to improve scrolling of viewport on line changes
+
+# 1.6.2
+ * NEW: Added pad shortcut disabling feature
+ * NEW: Create option to automatically reconnect after a few seconds
+ * Update: socket.io to 1.7.3
+ * Update: l10n lib
+ * Update: request to 2.83.0
+ * Update: Node for windows to 8.9.0
+ * Fix: minification of code
+
+# 1.6.1
  * NEW: Hook aceRegisterNonScrollableEditEvents to register events that shouldn't scroll
  * NEW: Added 'item' parameter to registerAceCommand Hook
  * NEW: Added LibreJS support
@@ -129,7 +299,7 @@
  * NEW: Allow LibreOffice to be used when exporting a pad
  * NEW: Create hook exportHtmlAdditionalTagsWithData
  * NEW: Improve DB migration performance
- * NEW: allow settings to be applied from the filesystem 
+ * NEW: allow settings to be applied from the filesystem
  * NEW: remove applySettings hook and allow credentials.json to be part of core
  * NEW: Use exec to switch to node process
  * NEW: Validate incoming color codes
@@ -158,7 +328,7 @@
  * Fix: switchToPad method
  * Fix: Dead keys
  * Fix: Preserve new lines in copy-pasted text
- * Fix: Compatibility mode on IE 
+ * Fix: Compatibility mode on IE
  * Fix: Content Collector to get the class of the DOM-node
  * Fix: Timeslider export links
  * Fix: Double prompt on file upload
@@ -285,7 +455,7 @@
  * Fix: Session Deletion error
  * Fix: Allow browser tabs to be cycled when focus is in editor
  * Fix: Various Editor issues with Easysync potentially entering forever loop on bad changeset
- 
+
 # 1.4
  * NEW: Disable toolbar items through settings.json
  * NEW: Internal stats/metrics engine
@@ -317,7 +487,7 @@
 # 1.3
  * NEW: We now follow the semantic versioning scheme!
  * NEW: Option to disable IP logging
- * NEW: Localisation updates from http://translatewiki.net. 
+ * NEW: Localisation updates from https://translatewiki.net.
  * Fix: Fix readOnly group pads
  * Fix: don't fetch padList on every request
 
@@ -410,7 +580,7 @@
  * NEW: Add authorId to chat and userlist as a data attribute
  * NEW: Refactor and fix our frontend tests
  * NEW: Localisation updates
- 
+
 
 # 1.2.81
  * Fix: CtrlZ-Y for Undo Redo
@@ -450,7 +620,7 @@
  * Other: Change loading message asking user to please wait on first build
  * Other: Allow etherpad to use global npm installation (Safe since node 6.3)
  * Other: Better documentation for log rotation and log message handling
- 
+
 
 
 # 1.2.7
@@ -537,7 +707,7 @@
  * Plugin-specific settings in settings.json (finally allowing for things like a google analytics plugin)
  * Serve admin dashboard at /admin (still very limited, though)
  * Modify your settings.json through the newly created UI at /admin/settings
- * Fix: Import <ol>'s  as <ol>'s and not as <ul>'s!
+ * Fix: Import `<ol>` as `<ol>` and not as `<ul>`!
  * Added solaris compatibility (bin/installDeps.sh was broken on solaris)
  * Fix a bug with IE9 and Password Protected Pads using HTTPS
 

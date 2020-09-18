@@ -60,6 +60,8 @@ function getCollabClient(ace2editor, serverVars, initialUserInfo, options, _pad)
   var debugMessages = [];
   var msgQueue = [];
 
+  var isPendingRevision = false;
+
   tellAceAboutHistoricalAuthors(serverVars.historicalAuthorData);
   tellAceActiveAuthorInfo(initialUserInfo);
 
@@ -178,23 +180,36 @@ function getCollabClient(ace2editor, serverVars, initialUserInfo, options, _pad)
           editor.applyChangesToBase(changeset, author, apool);
         }
       }
+      if (isPendingRevision) {
+        setIsPendingRevision(false);
+      }
     }
 
     var sentMessage = false;
-    var userChangesData = editor.prepareUserChangeset();
-    if (userChangesData.changeset)
+    // Check if there are any pending revisions to be received from server.
+    // Allow only if there are no pending revisions to be received from server
+    if (!isPendingRevision)
     {
-      lastCommitTime = t;
-      state = "COMMITTING";
-      stateMessage = {
-        type: "USER_CHANGES",
-        baseRev: rev,
-        changeset: userChangesData.changeset,
-        apool: userChangesData.apool
-      };
-      sendMessage(stateMessage);
-      sentMessage = true;
-      callbacks.onInternalAction("commitPerformed");
+        var userChangesData = editor.prepareUserChangeset();
+        if (userChangesData.changeset)
+        {
+          lastCommitTime = t;
+          state = "COMMITTING";
+          stateMessage = {
+            type: "USER_CHANGES",
+            baseRev: rev,
+            changeset: userChangesData.changeset,
+            apool: userChangesData.apool
+          };
+          sendMessage(stateMessage);
+          sentMessage = true;
+          callbacks.onInternalAction("commitPerformed");
+        }
+    }
+    else
+    {
+        // run again in a few seconds, to check if there was a reconnection attempt
+        setTimeout(wrapRecordingErrors("setTimeout(handleUserChanges)", handleUserChanges), 3000);
     }
 
     if (sentMessage)
@@ -257,9 +272,6 @@ function getCollabClient(ace2editor, serverVars, initialUserInfo, options, _pad)
 
   function handleMessageFromServer(evt)
   {
-    // SANDSTORM EDIT: don't log
-    // if (window.console) console.log(evt);
-
     if (!getSocket()) return;
     if (!evt.data) return;
     var wrapper = evt;
@@ -295,10 +307,21 @@ function getCollabClient(ace2editor, serverVars, initialUserInfo, options, _pad)
         return;
       }
       rev = newRev;
+
       editor.applyChangesToBase(changeset, author, apool);
     }
     else if (msg.type == "ACCEPT_COMMIT")
     {
+      /*
+       * this is the first time this user contributed to this pad. Let's record
+       * it, because it will be used for allowing import.
+       *
+       * TODO: here, we are changing this variable on the client side only. The
+       *       server has all the informations to make the same deduction, and
+       *       broadcast to the client.
+       */
+      clientVars.thisUserHasEditedThisPad = true;
+
       var newRev = msg.newRev;
       if (msgQueue.length > 0)
       {
@@ -330,6 +353,69 @@ function getCollabClient(ace2editor, serverVars, initialUserInfo, options, _pad)
         callbacks.onConnectionTrouble("OK");
       });
       handleUserChanges();
+    }
+    else if (msg.type == 'CLIENT_RECONNECT')
+    {
+      // Server sends a CLIENT_RECONNECT message when there is a client reconnect. Server also returns
+      // all pending revisions along with this CLIENT_RECONNECT message
+      if (msg.noChanges)
+      {
+        // If no revisions are pending, just make everything normal
+        setIsPendingRevision(false);
+        return;
+      }
+
+      var headRev = msg.headRev;
+      var newRev = msg.newRev;
+      var changeset = msg.changeset;
+      var author = (msg.author || '');
+      var apool = msg.apool;
+
+      if (msgQueue.length > 0)
+      {
+        if (newRev != (msgQueue[msgQueue.length - 1].newRev + 1))
+        {
+          window.console.warn("bad message revision on CLIENT_RECONNECT: " + newRev + " not " + (msgQueue[msgQueue.length - 1][0] + 1));
+          // setChannelState("DISCONNECTED", "badmessage_acceptcommit");
+          return;
+        }
+        msg.type = "NEW_CHANGES";
+        msgQueue.push(msg);
+        return;
+      }
+
+      if (newRev != (rev + 1))
+      {
+        window.console.warn("bad message revision on CLIENT_RECONNECT: " + newRev + " not " + (rev + 1));
+        // setChannelState("DISCONNECTED", "badmessage_acceptcommit");
+        return;
+      }
+
+      rev = newRev;
+      if (author == pad.getUserId())
+      {
+        editor.applyPreparedChangesetToBase();
+        setStateIdle();
+        callCatchingErrors("onInternalAction", function()
+        {
+          callbacks.onInternalAction("commitAcceptedByServer");
+        });
+        callCatchingErrors("onConnectionTrouble", function()
+        {
+          callbacks.onConnectionTrouble("OK");
+        });
+        handleUserChanges();
+      }
+      else
+      {
+        editor.applyChangesToBase(changeset, author, apool);
+      }
+
+      if (newRev == headRev)
+      {
+        // Once we have applied all pending revisions, make everything normal
+        setIsPendingRevision(false);
+      }
     }
     else if (msg.type == "NO_COMMIT_PENDING")
     {
@@ -421,6 +507,9 @@ function getCollabClient(ace2editor, serverVars, initialUserInfo, options, _pad)
     if(msg.type.indexOf("USER_") > -1) {
       msg.payload = msg.userInfo;
     }
+    // Similar for NEW_CHANGES
+    if(msg.type === "NEW_CHANGES") msg.payload = msg;
+
     hooks.callAll('handleClientMessage_' + msg.type, {payload: msg.payload});
   }
 
@@ -594,6 +683,11 @@ function getCollabClient(ace2editor, serverVars, initialUserInfo, options, _pad)
     schedulePerhapsCallIdleFuncs();
   }
 
+  function setIsPendingRevision(value)
+  {
+    isPendingRevision = value;
+  }
+
   function callWhenNotCommitting(func)
   {
     idleFuncs.push(func);
@@ -659,10 +753,12 @@ function getCollabClient(ace2editor, serverVars, initialUserInfo, options, _pad)
     getMissedChanges: getMissedChanges,
     callWhenNotCommitting: callWhenNotCommitting,
     addHistoricalAuthors: tellAceAboutHistoricalAuthors,
-    setChannelState: setChannelState
+    setChannelState: setChannelState,
+    setStateIdle: setStateIdle,
+    setIsPendingRevision: setIsPendingRevision
   };
 
-  $(document).ready(setUpSocket);
+  setUpSocket();
   return self;
 }
 

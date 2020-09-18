@@ -1,106 +1,99 @@
 #!/bin/sh
 
-#Move to the folder where ep-lite is installed
-cd `dirname $0`
+# minimum required node version
+REQUIRED_NODE_MAJOR=10
+REQUIRED_NODE_MINOR=13
 
-#Was this script started in the bin folder? if yes move out
-if [ -d "../bin" ]; then
-  cd "../"
-fi
+# minimum required npm version
+REQUIRED_NPM_MAJOR=5
+REQUIRED_NPM_MINOR=5
 
-#Is gnu-grep (ggrep) installed on SunOS (Solaris)
-if [ $(uname) = "SunOS" ]; then
-  hash ggrep > /dev/null 2>&1 || {
-    echo "Please install ggrep (pkg install gnu-grep)" >&2
-    exit 1
-  }
-fi
+pecho() { printf %s\\n "$*"; }
+log() { pecho "$@"; }
+error() { log "ERROR: $@" >&2; }
+fatal() { error "$@"; exit 1; }
+is_cmd() { command -v "$@" >/dev/null 2>&1; }
 
-#Is curl installed?
-hash curl > /dev/null 2>&1 || {
-  echo "Please install curl" >&2
-  exit 1
+require_minimal_version() {
+  PROGRAM_LABEL="$1"
+  VERSION_STRING="$2"
+  REQUIRED_MAJOR="$3"
+  REQUIRED_MINOR="$4"
+
+  # Flag -s (--only-delimited on GNU cut) ensures no string is returned
+  # when there is no match
+  DETECTED_MAJOR=$(pecho "$VERSION_STRING" | cut -s -d "." -f 1)
+  DETECTED_MINOR=$(pecho "$VERSION_STRING" | cut -s -d "." -f 2)
+
+  [ -n "$DETECTED_MAJOR" ] || fatal "Cannot extract $PROGRAM_LABEL major version from version string \"$VERSION_STRING\""
+
+  [ -n "$DETECTED_MINOR" ] || fatal "Cannot extract $PROGRAM_LABEL minor version from version string \"$VERSION_STRING\""
+
+  case "$DETECTED_MAJOR" in
+      ''|*[!0-9]*)
+        fatal "$PROGRAM_LABEL major version from \"$VERSION_STRING\" is not a number. Detected: \"$DETECTED_MAJOR\""
+        ;;
+  esac
+
+  case "$DETECTED_MINOR" in
+      ''|*[!0-9]*)
+        fatal "$PROGRAM_LABEL minor version from \"$VERSION_STRING\" is not a number. Detected: \"$DETECTED_MINOR\""
+  esac
+
+  [ "$DETECTED_MAJOR" -gt "$REQUIRED_MAJOR" ] || ([ "$DETECTED_MAJOR" -eq "$REQUIRED_MAJOR" ] && [ "$DETECTED_MINOR" -ge "$REQUIRED_MINOR" ]) \
+    || fatal "Your $PROGRAM_LABEL version \"$VERSION_STRING\" is too old. $PROGRAM_LABEL $REQUIRED_MAJOR.$REQUIRED_MINOR.x or higher is required."
 }
 
-#Is node installed?
-#not checking io.js, default installation creates a symbolic link to node
-hash node > /dev/null 2>&1 || {
-  echo "Please install node.js ( http://nodejs.org )" >&2
-  exit 1
-}
+# Move to the folder where ep-lite is installed
+cd "$(dirname "$0")"/..
 
-#Is npm installed?
-hash npm > /dev/null 2>&1 || {
-  echo "Please install npm ( http://npmjs.org )" >&2
-  exit 1
-}
+# Is node installed?
+# Not checking io.js, default installation creates a symbolic link to node
+is_cmd node || fatal "Please install node.js ( https://nodejs.org )"
 
-#check npm version
-NPM_VERSION=$(npm --version)
-NPM_MAIN_VERSION=$(echo $NPM_VERSION | cut -d "." -f 1)
-if [ $(echo $NPM_MAIN_VERSION) = "0" ]; then
-  echo "You're running a wrong version of npm, you're using $NPM_VERSION, we need 1.x or higher" >&2
-  exit 1
-fi
+# Is npm installed?
+is_cmd npm || fatal "Please install npm ( https://npmjs.org )"
 
-#check node version
-NODE_VERSION=$(node --version)
-NODE_V_MINOR=$(echo $NODE_VERSION | cut -d "." -f 1-2)
-NODE_V_MAIN=$(echo $NODE_VERSION | cut -d "." -f 1)
-NODE_V_MAIN=${NODE_V_MAIN#"v"}
-if [ ! $NODE_V_MINOR = "v0.10" ] && [ ! $NODE_V_MINOR = "v0.11" ] && [ ! $NODE_V_MINOR = "v0.12" ] && [ ! $NODE_V_MAIN -ge 4 ]; then
-  echo "You're running a wrong version of node. You're using $NODE_VERSION, we need node v0.10.x or higher" >&2
-  exit 1
-fi
+# Check npm version
+NPM_VERSION_STRING=$(npm --version)
 
-#Get the name of the settings file
+require_minimal_version "npm" "$NPM_VERSION_STRING" "$REQUIRED_NPM_MAJOR" "$REQUIRED_NPM_MINOR"
+
+# Check node version
+NODE_VERSION_STRING=$(node --version)
+NODE_VERSION_STRING=${NODE_VERSION_STRING#"v"}
+
+require_minimal_version "nodejs" "$NODE_VERSION_STRING" "$REQUIRED_NODE_MAJOR" "$REQUIRED_NODE_MINOR"
+
+# Get the name of the settings file
 settings="settings.json"
 a='';
-for arg in $*; do
+for arg in "$@"; do
   if [ "$a" = "--settings" ] || [ "$a" = "-s" ]; then settings=$arg; fi
   a=$arg
 done
 
-#Does a $settings exist? if no copy the template
-if [ ! -f $settings ]; then
-  echo "Copy the settings template to $settings..."
-  cp settings.json.template $settings || exit 1
+# Does a $settings exist? if not copy the template
+if [ ! -f "$settings" ]; then
+  log "Copy the settings template to $settings..."
+  cp settings.json.template "$settings" || exit 1
 fi
 
-echo "Ensure that all dependencies are up to date...  If this is the first time you have run Etherpad please be patient."
+log "Ensure that all dependencies are up to date...  If this is the first time you have run Etherpad please be patient."
 (
   mkdir -p node_modules
   cd node_modules
   [ -e ep_etherpad-lite ] || ln -s ../src ep_etherpad-lite
   cd ep_etherpad-lite
-  npm install --loglevel warn
+  npm ci
   npm install sqlite3   # SANDSTORM EDIT
 ) || {
-  rm -rf node_modules
+  rm -rf src/node_modules
   exit 1
 }
 
-echo "Ensure jQuery is downloaded and up to date..."
-DOWNLOAD_JQUERY="true"
-NEEDED_VERSION="1.9.1"
-if [ -f "src/static/js/jquery.js" ]; then
-  if [ $(uname) = "SunOS" ]; then
-    VERSION=$(head -n 3 src/static/js/jquery.js | ggrep -o "v[0-9]\.[0-9]\(\.[0-9]\)\?")
-  else
-    VERSION=$(head -n 3 src/static/js/jquery.js | grep -o "v[0-9]\.[0-9]\(\.[0-9]\)\?")
-  fi
-
-  if [ ${VERSION#v} = $NEEDED_VERSION ]; then
-    DOWNLOAD_JQUERY="false"
-  fi
-fi
-
-if [ $DOWNLOAD_JQUERY = "true" ]; then
-  curl -lo src/static/js/jquery.js https://code.jquery.com/jquery-$NEEDED_VERSION.js || exit 1
-fi
-
-#Remove all minified data to force node creating it new
-echo "Clearing minified cache..."
+# Remove all minified data to force node creating it new
+log "Clearing minified cache..."
 rm -f var/minified*
 
 echo "Ensure custom css/js files are created..."

@@ -1,10 +1,10 @@
-var startTime = new Date().getTime();
+var startTime = Date.now();
 
 require("ep_etherpad-lite/node_modules/npm").load({}, function(er,npm) {
 
   var fs = require("fs");
 
-  var ueberDB = require("ep_etherpad-lite/node_modules/ueberDB");
+  var ueberDB = require("ep_etherpad-lite/node_modules/ueberdb2");
   var settings = require("ep_etherpad-lite/node/utils/Settings");
   var log4js = require('ep_etherpad-lite/node_modules/log4js');
 
@@ -30,7 +30,7 @@ require("ep_etherpad-lite/node_modules/npm").load({}, function(er,npm) {
     //there was an error while initializing the database, output it and stop
     if(err)
     {
-      console.error("ERROR: Problem while initalizing the database");
+      console.error("ERROR: Problem while initializing the database");
       console.error(err.stack ? err.stack : err);
       process.exit(1);
     }
@@ -73,7 +73,7 @@ require("ep_etherpad-lite/node_modules/npm").load({}, function(er,npm) {
 
 function log(str)
 {
-  console.log((new Date().getTime() - startTime)/1000 + "\t" + str);
+  console.log((Date.now() - startTime)/1000 + "\t" + str);
 }
 
 unescape = function(val) {

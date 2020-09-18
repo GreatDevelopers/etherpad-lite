@@ -1,7 +1,7 @@
 # Plugins
 Etherpad allows you to extend its functionality with plugins. A plugin registers hooks (functions) for certain events (thus certain features) in Etherpad-lite to execute its own functionality based on these events.
 
-Publicly available plugins can be found in the npm registry (see <http://npmjs.org>). Etherpad-lite's naming convention for plugins is to prefix your plugins with `ep_`. So, e.g. it's `ep_flubberworms`. Thus you can install plugins from npm, using `npm install ep_flubberworm` in etherpad-lite's root directory.
+Publicly available plugins can be found in the npm registry (see <https://npmjs.org>). Etherpad-lite's naming convention for plugins is to prefix your plugins with `ep_`. So, e.g. it's `ep_flubberworms`. Thus you can install plugins from npm, using `npm install ep_flubberworm` in etherpad-lite's root directory.
 
 You can also browse to `http://yourEtherpadInstan.ce/admin/plugins`, which will list all installed plugins  and those available on npm. It even provides functionality to search through all available plugins.
 
@@ -17,7 +17,7 @@ ep_<plugin>/
 ```
 If your plugin includes client-side hooks, put them in `static/js/`. If you're adding in CSS or image files, you should put those files in `static/css/ `and `static/image/`, respectively, and templates go into `templates/`. Translations go into `locales/`
 
-A Standard directory structure like this makes it easier to navigate through your code. That said, do note, that this is not actually *required* to make your plugin run. If you want to make use of our i18n system, you need to put your translations into `locales/`, though, in order to have them intergated. (See "Localization" for more info on how to localize your plugin)
+A Standard directory structure like this makes it easier to navigate through your code. That said, do note, that this is not actually *required* to make your plugin run. If you want to make use of our i18n system, you need to put your translations into `locales/`, though, in order to have them integrated. (See "Localization" for more info on how to localize your plugin)
 
 ## Plugin definition
 Your plugin definition goes into `ep.json`. In this file you register your hooks, indicate the parts of your plugin and the order of execution. (A documentation of all available events to hook into can be found in chapter [hooks](#all_hooks).)
@@ -41,16 +41,32 @@ A hook registration is a pairs of a hook name and a function reference (filename
 }
 ```
 
-Etherpad-lite will expect the part of the hook definition before the colon to be a javascript file and will try to require it. The part after the colon is expected to be a valid function identifier of that module. So, you have to export your hooks, using [`module.exports`](http://nodejs.org/docs/latest/api/modules.html#modules_modules) and register it in `ep.json` as `ep_<plugin>/path/to/<file>:FUNCTIONNAME`.
+Etherpad-lite will expect the part of the hook definition before the colon to be a javascript file and will try to require it. The part after the colon is expected to be a valid function identifier of that module. So, you have to export your hooks, using [`module.exports`](https://nodejs.org/docs/latest/api/modules.html#modules_modules) and register it in `ep.json` as `ep_<plugin>/path/to/<file>:FUNCTIONNAME`.
 You can omit the `FUNCTIONNAME` part, if the exported function has got the same name as the hook. So `"authorize" : "ep_flubberworm/foo"` will call the function `exports.authorize` in `ep_flubberworm/foo.js`
 
 ### Client hooks and server hooks
 There are server hooks, which will be executed on the server (e.g. `expressCreateServer`), and there are client hooks, which are executed on the client (e.g. `acePopulateDomLine`). Be sure to not make assumptions about the environment your code is running in, e.g. don't try to access `process`, if you know your code will be run on the client, and likewise, don't try to access `window` on the server...
 
+### Styling
+When you install a client-side plugin (e.g. one that implements at least one client-side hook), the plugin name is added to the `class` attribute of the div `#editorcontainerbox` in the main window.
+This gives you the opportunity of tuning the appearance of the main UI in your plugin.
+
+For example, this is the markup with no plugins installed:
+```html
+<div id="editorcontainerbox" class="">
+```
+
+and this is the contents after installing `someplugin`:
+```html
+<div id="editorcontainerbox" class="ep_someplugin">
+```
+
+This feature was introduced in Etherpad **1.8**.
+
 ### Parts
 As your plugins become more and more complex, you will find yourself in the need to manage dependencies between plugins. E.g. you want the hooks of a certain plugin to be executed before (or after) yours. You can also manage these dependencies in your plugin definition file `ep.json`:
 
-```javascript
+```json
 {
   "parts": [
     {
@@ -89,7 +105,7 @@ Note that it would be far more sane to use `"pre"` in almost any case, but if yo
 Also, note that dependencies should *also* be listed in your package.json, so they can be `npm install`'d automagically when your plugin gets installed.
 
 ## Package definition
-Your plugin must also contain a [package definition file](http://npmjs.org/doc/json.html), called package.json, in the project root - this file contains various metadata relevant to your plugin, such as the name and version number, author, project hompage, contributors, a short description, etc. If you publish your plugin on npm, these metadata are used for package search etc., but it's necessary for Etherpad-lite plugins, even if you don't publish your plugin.
+Your plugin must also contain a [package definition file](https://docs.npmjs.com/files/package.json), called package.json, in the project root - this file contains various metadata relevant to your plugin, such as the name and version number, author, project hompage, contributors, a short description, etc. If you publish your plugin on npm, these metadata are used for package search etc., but it's necessary for Etherpad-lite plugins, even if you don't publish your plugin.
 
 ```json
 {
@@ -99,7 +115,7 @@ Your plugin must also contain a [package definition file](http://npmjs.org/doc/j
   "author": "USERNAME (REAL NAME) <MAIL@EXAMPLE.COM>",
   "contributors": [],
   "dependencies": {"MODULE": "0.3.20"},
-  "engines": { "node": ">= 0.6.0"}
+  "engines": { "node": ">= 10.13.0"}
 }
 ```
 
@@ -108,7 +124,7 @@ If your plugin adds or modifies the front end HTML (e.g. adding buttons or chang
 
 ## Writing and running front-end tests for your plugin
 
-Etherpad allows you to easily create front-end tests for plugins.  
+Etherpad allows you to easily create front-end tests for plugins.
 
 1. Create a new folder
 ```

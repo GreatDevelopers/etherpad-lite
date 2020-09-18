@@ -23,7 +23,6 @@
 // These jQuery things should create local references, but for now `require()`
 // assigns to the global `$` and augments it with plugins.
 require('./jquery');
-JSON = require('./json2');
 
 var createCookie = require('./pad_utils').createCookie;
 var readCookie = require('./pad_utils').readCookie;
@@ -60,10 +59,10 @@ function init() {
     var url = loc.protocol + "//" + loc.hostname + ":" + port + "/";
     //find out in which subfolder we are
     var resource = exports.baseURL.substring(1) + 'socket.io';
-    
+
     //build up the socket io connection
     socket = io.connect(url, {path: exports.baseURL + 'socket.io', resource: resource});
-    
+
     //send the ready message once we're connected
     socket.on('connect', function()
     {
@@ -78,8 +77,6 @@ function init() {
     //route the incoming messages
     socket.on('message', function(message)
     {
-      if(window.console) console.log(message);
-
       if(message.type == "CLIENT_VARS")
       {
         handleClientVars(message);
@@ -88,7 +85,7 @@ function init() {
       {
         $("body").html("<h2>You have no permission to access this pad</h2>")
       } else {
-        changesetLoader.handleMessageFromServer(message);
+        if(message.type === 'CHANGESET_REQ') changesetLoader.handleMessageFromServer(message);
       }
     });
 
@@ -126,13 +123,13 @@ function sendSocketMsg(type, data)
 }
 
 var fireWhenAllScriptsAreLoaded = [];
-  
+
 var changesetLoader;
 function handleClientVars(message)
 {
   //save the client Vars
   clientVars = message.data;
-  
+
   //load all script that doesn't work without the clientVars
   BroadcastSlider = require('./broadcast_slider').loadBroadcastSliderJS(fireWhenAllScriptsAreLoaded);
   require('./broadcast_revisions').loadBroadcastRevisionsJS();
@@ -141,13 +138,24 @@ function handleClientVars(message)
   //initialize export ui
   require('./pad_impexp').padimpexp.init();
 
+  // Create a base URI used for timeslider exports
+  var baseURI = document.location.pathname;
+
   //change export urls when the slider moves
   BroadcastSlider.onSlider(function(revno)
   {
     // export_links is a jQuery Array, so .each is allowed.
     export_links.each(function()
     {
-      this.setAttribute('href', this.href.replace( /(.+?)\/[^\/]+\/(\d+\/)?export/ , '$1/' + padId + '/' + revno + '/export'));
+      // Modified from regular expression to fix:
+      // https://github.com/ether/etherpad-lite/issues/4071
+      // Where a padId that was numeric would create the wrong export link
+      if(this.href){
+        var type = this.href.split('export/')[1];
+        var href = baseURI.split('timeslider')[0];
+        href += revno + '/export/' + type;
+        this.setAttribute('href', href);
+      }
     });
   });
 
@@ -165,30 +173,8 @@ function handleClientVars(message)
 
   // font family change
   $("#viewfontmenu").change(function(){
-    var font = $("#viewfontmenu").val();
-    if(font === "monospace") setFont("Courier new");
-    if(font === "opendyslexic") setFont("OpenDyslexic");
-    if(font === "comicsans") setFont("Comic Sans MS");
-    if(font === "georgia") setFont("Georgia");
-    if(font === "impact") setFont("Impact");
-    if(font === "lucida") setFont("Lucida");
-    if(font === "lucidasans") setFont("Lucida Sans Unicode");
-    if(font === "palatino") setFont("Palatino Linotype");
-    if(font === "tahoma") setFont("Tahoma");
-    if(font === "timesnewroman") setFont("Times New Roman");
-    if(font === "trebuchet") setFont("Trebuchet MS");
-    if(font === "verdana") setFont("Verdana");
-    if(font === "symbol") setFont("Symbol");
-    if(font === "webdings") setFont("Webdings");
-    if(font === "wingdings") setFont("Wingdings");
-    if(font === "sansserif") setFont("MS Sans Serif");
-    if(font === "serif") setFont("MS Serif");
+    $('#innerdocbody').css("font-family", $(this).val() || "");
   });
-
-}
-
-function setFont(font){
-  $('#padcontent').css("font-family", font);
 }
 
 exports.baseURL = '';

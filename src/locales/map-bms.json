@@ -1,6 +1,7 @@
 {
 	"@metadata": {
 		"authors": [
+			"Empu",
 			"StefanusRA"
 		]
 	},
@@ -30,15 +31,13 @@
 	"pad.permissionDenied": "Rika ora duwe idin kanggo ngakses pad kiye",
 	"pad.wrongPassword": "Tembung sandhine Rika salah",
 	"pad.settings.padSettings": "Pangaturan Pad",
-	"pad.settings.myView": "Delengane Inyong",
+	"pad.settings.myView": "Delengané Inyong",
 	"pad.settings.stickychat": "Dopokan mesti nang layar",
 	"pad.settings.colorcheck": "Authorship colors",
 	"pad.settings.linenocheck": "Nomer baris",
 	"pad.settings.rtlcheck": "Waca isi sekang tengen maring kiwe?",
 	"pad.settings.fontType": "Tipe Font:",
 	"pad.settings.fontType.normal": "Normal",
-	"pad.settings.fontType.monospaced": "Monospace",
-	"pad.settings.globalView": "Global View",
 	"pad.settings.language": "Basa:",
 	"pad.importExport.import_export": "Impor/Ekspor",
 	"pad.importExport.import": "Unggahna berkas teks utawa dokumen",

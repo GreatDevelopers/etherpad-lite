@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-
-var async = require("async");
 var Changeset = require("ep_etherpad-lite/static/js/Changeset");
 var padManager = require("../db/PadManager");
-var ERR = require("async-stacktrace");
 var _ = require('underscore');
 var Security = require('ep_etherpad-lite/static/js/security');
 var hooks = require('ep_etherpad-lite/static/js/pluginfw/hooks');
@@ -26,45 +23,17 @@ var eejs = require('ep_etherpad-lite/node/eejs');
 var _analyzeLine = require('./ExportHelper')._analyzeLine;
 var _encodeWhitespace = require('./ExportHelper')._encodeWhitespace;
 
-function getPadHTML(pad, revNum, callback)
+async function getPadHTML(pad, revNum)
 {
-  var atext = pad.atext;
-  var html;
-  async.waterfall([
+  let atext = pad.atext;
+
   // fetch revision atext
-  function (callback)
-  {
-    if (revNum != undefined)
-    {
-      pad.getInternalRevisionAText(revNum, function (err, revisionAtext)
-      {
-        if(ERR(err, callback)) return;
-        atext = revisionAtext;
-        callback();
-      });
-    }
-    else
-    {
-      callback(null);
-    }
-  },
+  if (revNum != undefined) {
+    atext = await pad.getInternalRevisionAText(revNum);
+  }
 
   // convert atext to html
-
-
-  function (callback)
-  {
-    html = getHTMLFromAtext(pad, atext);
-    callback(null);
-  }],
-  // run final callback
-
-
-  function (err)
-  {
-    if(ERR(err, callback)) return;
-    callback(null, html);
-  });
+  return getHTMLFromAtext(pad, atext);
 }
 
 exports.getPadHTML = getPadHTML;
@@ -81,15 +50,16 @@ function getHTMLFromAtext(pad, atext, authorColors)
 
   // prepare tags stored as ['tag', true] to be exported
   hooks.aCallAll("exportHtmlAdditionalTags", pad, function(err, newProps){
-    newProps.forEach(function (propName, i){
+    newProps.forEach(function (propName, i) {
       tags.push(propName);
       props.push(propName);
     });
   });
+
   // prepare tags stored as ['tag', 'value'] to be exported. This will generate HTML
   // with tags like <span data-tag="value">
   hooks.aCallAll("exportHtmlAdditionalTagsWithData", pad, function(err, newProps){
-    newProps.forEach(function (propName, i){
+    newProps.forEach(function (propName, i) {
       tags.push('span data-' + propName[0] + '="' + propName[1] + '"');
       props.push(propName);
     });
@@ -268,7 +238,7 @@ function getHTMLFromAtext(pad, atext, authorColors)
         }
 
         // close all tags upto the outer most
-        if (outermostTag != -1)
+        if (outermostTag !== -1)
         {
           while ( outermostTag >= 0 )
           {
@@ -282,7 +252,7 @@ function getHTMLFromAtext(pad, atext, authorColors)
         {
           if (openTags.indexOf(usedAttribs[i]) === -1)
           {
-            emitOpenTag(usedAttribs[i])
+            emitOpenTag(usedAttribs[i]);
           }
         }
 
@@ -304,7 +274,7 @@ function getHTMLFromAtext(pad, atext, authorColors)
       // close all the tags that are open after the last op
       while (openTags.length > 0)
       {
-        emitCloseTag(openTags[0])
+        emitCloseTag(openTags[0]);
       }
     } // end processNextChars
     if (urls)
@@ -315,13 +285,20 @@ function getHTMLFromAtext(pad, atext, authorColors)
         var url = urlData[1];
         var urlLength = url.length;
         processNextChars(startIndex - idx);
-        assem.append('<a href="' + Security.escapeHTMLAttribute(url) + '">');
+        // Using rel="noreferrer" stops leaking the URL/location of the exported HTML when clicking links in the document.
+        // Not all browsers understand this attribute, but it's part of the HTML5 standard.
+        // https://html.spec.whatwg.org/multipage/links.html#link-type-noreferrer
+        // Additionally, we do rel="noopener" to ensure a higher level of referrer security.
+        // https://html.spec.whatwg.org/multipage/links.html#link-type-noopener
+        // https://mathiasbynens.github.io/rel-noopener/
+        // https://github.com/ether/etherpad-lite/pull/3636
+        assem.append('<a href="' + Security.escapeHTMLAttribute(url) + '" rel="noreferrer noopener">');
         processNextChars(urlLength);
         assem.append('</a>');
       });
     }
     processNextChars(text.length - idx);
-
+    
     return _processSpaces(assem.toString());
   } // end getLineHTML
   var pieces = [css];
@@ -333,178 +310,199 @@ function getHTMLFromAtext(pad, atext, authorColors)
   // so we want to do something reasonable there.  We also
   // want to deal gracefully with blank lines.
   // => keeps track of the parents level of indentation
-  var lists = []; // e.g. [[1,'bullet'], [3,'bullet'], ...]
-  var listLevels = []
+  var openLists = [];
   for (var i = 0; i < textLines.length; i++)
   {
+    var context;
     var line = _analyzeLine(textLines[i], attribLines[i], apool);
     var lineContent = getLineHTML(line.text, line.aline);
-    listLevels.push(line.listLevel)
-
     if (line.listLevel)//If we are inside a list
     {
-      // do list stuff
-      var whichList = -1; // index into lists or -1
-      if (line.listLevel)
-      {
-        whichList = lists.length;
-        for (var j = lists.length - 1; j >= 0; j--)
-        {
-          if (line.listLevel <= lists[j][0])
-          {
-            whichList = j;
-          }
-        }
-      }
-
-      if (whichList >= lists.length)//means we are on a deeper level of indentation than the previous line
-      {
-        if(lists.length > 0){
-          pieces.push('</li>')
-        }
-        lists.push([line.listLevel, line.listTypeName]);
-
-        // if there is a previous list we need to open x tags, where x is the difference of the levels
-        // if there is no previous list we need to open x tags, where x is the wanted level
-        var toOpen = lists.length > 1 ? line.listLevel - lists[lists.length - 2][0] - 1 : line.listLevel - 1
-
-        if(line.listTypeName == "number")
-        {
-          if(toOpen > 0){
-            pieces.push(new Array(toOpen + 1).join('<ol>'))
-          }
-          pieces.push('<ol class="'+line.listTypeName+'"><li>', lineContent || '<br>');
-        }
-        else
-        {
-          if(toOpen > 0){
-            pieces.push(new Array(toOpen + 1).join('<ul>'))
-          }
-          pieces.push('<ul class="'+line.listTypeName+'"><li>', lineContent || '<br>');
-        }
-      }
-      //the following code *seems* dead after my patch.
-      //I keep it just in case I'm wrong...
-      /*else if (whichList == -1)//means we are not inside a list
-      {
-        if (line.text)
-        {
-          console.log('trace 1');
-          // non-blank line, end all lists
-          if(line.listTypeName == "number")
-          {
-            pieces.push(new Array(lists.length + 1).join('</li></ol>'));
-          }
-          else
-          {
-            pieces.push(new Array(lists.length + 1).join('</li></ul>'));
-          }
-          lists.length = 0;
-          pieces.push(lineContent, '<br>');
-        }
-        else
-        {
-          console.log('trace 2');
-          pieces.push('<br><br>');
-        }
-      }*/
-      else//means we are getting closer to the lowest level of indentation or are at the same level
-      {
-        var toClose = lists.length > 0 ? listLevels[listLevels.length - 2] - line.listLevel : 0
-        if( toClose > 0){
-          pieces.push('</li>')
-          if(lists[lists.length - 1][1] == "number")
-          {
-            pieces.push(new Array(toClose+1).join('</ol>'))
-            pieces.push('<li>', lineContent || '<br>');
-          }
-          else
-          {
-            pieces.push(new Array(toClose+1).join('</ul>'))
-            pieces.push('<li>', lineContent || '<br>');
-          }
-          lists = lists.slice(0,whichList+1)
-        } else {
-          pieces.push('</li><li>', lineContent || '<br>');
-        }
-      }
-    }
-    else//outside any list, need to close line.listLevel of lists
-    {
-      if(lists.length > 0){
-        if(lists[lists.length - 1][1] == "number"){
-          pieces.push('</li></ol>');
-          pieces.push(new Array(listLevels[listLevels.length - 2]).join('</ol>'))
-        } else {
-          pieces.push('</li></ul>');
-          pieces.push(new Array(listLevels[listLevels.length - 2]).join('</ul>'))
-        }
-      }
-      lists = []
-
-      var context = {
+      context = {
         line: line,
         lineContent: lineContent,
         apool: apool,
         attribLine: attribLines[i],
         text: textLines[i],
         padId: pad.id
+      };
+      var prevLine = null;
+      var nextLine = null;
+      if (i > 0)
+      {
+        prevLine = _analyzeLine(textLines[i -1], attribLines[i -1], apool);
+      }
+      if (i < textLines.length)
+      {
+        nextLine = _analyzeLine(textLines[i + 1], attribLines[i + 1], apool);
+      }
+      hooks.aCallAll('getLineHTMLForExport', context);
+      //To create list parent elements
+      if ((!prevLine || prevLine.listLevel !== line.listLevel) || (prevLine && line.listTypeName !== prevLine.listTypeName))
+      {
+        var exists = _.find(openLists, function (item)
+        {
+          return (item.level === line.listLevel && item.type === line.listTypeName);
+        });
+        if (!exists) {
+          var prevLevel = 0;
+          if (prevLine && prevLine.listLevel) {
+            prevLevel = prevLine.listLevel;
+          }
+          if (prevLine && line.listTypeName !== prevLine.listTypeName)
+          {
+            prevLevel = 0;
+          }
+
+          for (var diff = prevLevel; diff < line.listLevel; diff++) {
+            openLists.push({level: diff, type: line.listTypeName});
+            var prevPiece = pieces[pieces.length - 1];
+
+            if (prevPiece.indexOf("<ul") === 0 || prevPiece.indexOf("<ol") === 0 || prevPiece.indexOf("</li>") === 0)
+            {
+               /*
+                 uncommenting this breaks nested ols..
+                 if the previous item is NOT a ul, NOT an ol OR closing li then close the list
+                 so we consider this HTML, I inserted ** where it throws a problem in Example Wrong..
+                 <ol><li>one</li><li><ol><li>1.1</li><li><ol><li>1.1.1</li></ol></li></ol></li><li>two</li></ol>
+
+                 Note that closing the li then re-opening for another li item here is wrong.  The correct markup is
+                 <ol><li>one<ol><li>1.1<ol><li>1.1.1</li></ol></li></ol></li><li>two</li></ol>
+
+                 Exmaple Right: <ol class="number"><li>one</li><ol start="2" class="number"><li>1.1</li><ol start="3" class="number"><li>1.1.1</li></ol></li></ol><li>two</li></ol>
+                 Example Wrong: <ol class="number"><li>one</li>**</li>**<ol start="2" class="number"><li>1.1</li>**</li>**<ol start="3" class="number"><li>1.1.1</li></ol></li></ol><li>two</li></ol>
+                 So it's firing wrong where the current piece is an li and the previous piece is an ol and next piece is an ol
+                 So to remedy this we can say if next piece is NOT an OL or UL.
+                 // pieces.push("</li>");
+
+              */
+              if( (nextLine.listTypeName === 'number') && (nextLine.text === '') ){
+                // is the listTypeName check needed here?  null text might be completely fine!
+                // TODO Check against Uls
+                // don't do anything because the next item is a nested ol openener so we need to keep the li open
+              }else{
+                pieces.push("<li>");
+              }
+
+
+            }
+
+            if (line.listTypeName === "number")
+            {
+              // We introduce line.start here, this is useful for continuing Ordered list line numbers
+              // in case you have a bullet in a list IE you Want
+              // 1. hello
+              //   * foo
+              // 2. world
+              // Without this line.start logic it would be
+              // 1. hello * foo 1. world because the bullet would kill the OL
+
+              // TODO: This logic could also be used to continue OL with indented content
+              // but that's a job for another day....
+              if(line.start){
+                pieces.push("<ol start=\""+Number(line.start)+"\" class=\"" + line.listTypeName + "\">");
+              }else{
+                pieces.push("<ol class=\"" + line.listTypeName + "\">");
+              }
+            }
+            else
+            {
+              pieces.push("<ul class=\"" + line.listTypeName + "\">");
+            }
+          }
+        }
+      }
+      // if we're going up a level we shouldn't be adding..
+      if(context.lineContent){
+        pieces.push("<li>", context.lineContent);
       }
 
-      var lineContentFromHook = hooks.callAllStr("getLineHTMLForExport", context, " ", " ", "");
+      // To close list elements
+      if (nextLine && nextLine.listLevel === line.listLevel && line.listTypeName === nextLine.listTypeName)
+      {
+        if(context.lineContent){
+          if( (nextLine.listTypeName === 'number') && (nextLine.text === '') ){
+            // is the listTypeName check needed here?  null text might be completely fine!
+            // TODO Check against Uls
+            // don't do anything because the next item is a nested ol openener so we need to keep the li open
+          }else{
+            pieces.push("</li>");
+          }
 
-      if (lineContentFromHook)
-      {
-        pieces.push(lineContentFromHook, '');
+        }
       }
-      else
+      if ((!nextLine || !nextLine.listLevel || nextLine.listLevel < line.listLevel) || (nextLine && line.listTypeName !== nextLine.listTypeName))
       {
-        pieces.push(lineContent, '<br>');
+        var nextLevel = 0;
+        if (nextLine && nextLine.listLevel) {
+          nextLevel = nextLine.listLevel;
+        }
+        if (nextLine && line.listTypeName !== nextLine.listTypeName)
+        {
+          nextLevel = 0;
+        }
+
+        for (var diff = nextLevel; diff < line.listLevel; diff++)
+        {
+          openLists = openLists.filter(function(el)
+          {
+            return el.level !== diff && el.type !== line.listTypeName;
+          });
+
+          if (pieces[pieces.length - 1].indexOf("</ul") === 0 || pieces[pieces.length - 1].indexOf("</ol") === 0)
+          {
+            pieces.push("</li>");
+          }
+
+          if (line.listTypeName === "number")
+          {
+            pieces.push("</ol>");
+          }
+          else
+          {
+            pieces.push("</ul>");
+          }
+        }
       }
     }
-  }
+    else//outside any list, need to close line.listLevel of lists
+    {
+      context = {
+        line: line,
+        lineContent: lineContent,
+        apool: apool,
+        attribLine: attribLines[i],
+        text: textLines[i],
+        padId: pad.id
+      };
 
-  for (var k = lists.length - 1; k >= 0; k--)
-  {
-    if(lists[k][1] == "number")
-    {
-      pieces.push('</li></ol>');
-    }
-    else
-    {
-      pieces.push('</li></ul>');
+      hooks.aCallAll("getLineHTMLForExport", context);
+        pieces.push(context.lineContent, "<br>");
     }
   }
 
   return pieces.join('');
 }
 
-exports.getPadHTMLDocument = function (padId, revNum, callback)
+exports.getPadHTMLDocument = async function (padId, revNum)
 {
-  padManager.getPad(padId, function (err, pad)
-  {
-    if(ERR(err, callback)) return;
+  let pad = await padManager.getPad(padId);
 
-    var stylesForExportCSS = "";
-    // Include some Styles into the Head for Export
-    hooks.aCallAll("stylesForExport", padId, function(err, stylesForExport){
-      stylesForExport.forEach(function(css){
-        stylesForExportCSS += css;
-      });
-
-      getPadHTML(pad, revNum, function (err, html)
-      {
-        if(ERR(err, callback)) return;
-        var exportedDoc = eejs.require("ep_etherpad-lite/templates/export_html.html", {
-          body: html,
-          padId: Security.escapeHTML(padId),
-          extraCSS: stylesForExportCSS
-        });
-        callback(null, exportedDoc);
-      });
-    });
+  // Include some Styles into the Head for Export
+  let stylesForExportCSS = "";
+  let stylesForExport = await hooks.aCallAll("stylesForExport", padId);
+  stylesForExport.forEach(function(css){
+    stylesForExportCSS += css;
   });
-};
+
+  let html = await getPadHTML(pad, revNum);
+
+  return eejs.require("ep_etherpad-lite/templates/export_html.html", {
+    body: html,
+    padId: Security.escapeHTML(padId),
+    extraCSS: stylesForExportCSS
+  });
+}
 
 // copied from ACE
 var _REGEX_WORDCHAR = /[\u0030-\u0039\u0041-\u005A\u0061-\u007A\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF\u0100-\u1FFF\u3040-\u9FFF\uF900-\uFDFF\uFE70-\uFEFE\uFF10-\uFF19\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFDC]/;

@@ -1,5 +1,5 @@
 /**
- * This code is mostly from the old Etherpad. Please help us to comment this code. 
+ * This code is mostly from the old Etherpad. Please help us to comment this code.
  * This helps other people to understand this code better and helps them to improve it.
  * TL;DR COMMENTS ON THIS FILE ARE HIGHLY APPRECIATED
  */
@@ -29,7 +29,6 @@ var socket;
 require('./jquery');
 require('./farbtastic');
 require('./excanvas');
-JSON = require('./json2');
 
 var chat = require('./chat').chat;
 var getCollabClient = require('./collab_client').getCollabClient;
@@ -73,8 +72,8 @@ function randomString()
 //   callback: the function to call when all above succeeds, `val` is the value supplied by the user
 var getParameters = [
   { name: "noColors",         checkVal: "true",  callback: function(val) { settings.noColors = true; $('#clearAuthorship').hide(); } },
-  { name: "showControls",     checkVal: "false", callback: function(val) { $('#editbar').addClass('hideControlsEditbar'); $('#editorcontainer').addClass('hideControlsEditor'); } },
-  { name: "showChat",         checkVal: "false", callback: function(val) { $('#chaticon').hide(); } },
+  { name: "showControls",     checkVal: "true",  callback: function(val) { $('#editbar').css('display', 'flex') } },
+  { name: "showChat",         checkVal: null,    callback: function(val) { if(val==="false"){settings.hideChat = true;chat.hide();$('#chaticon').hide();} } },
   { name: "showLineNumbers",  checkVal: "false", callback: function(val) { settings.LineNumbersDisabled = true; } },
   { name: "useMonospaceFont", checkVal: "true",  callback: function(val) { settings.useMonospaceFontGlobal = true; } },
   // If the username is set as a parameter we should set a global value that we can call once we have initiated the pad.
@@ -82,7 +81,7 @@ var getParameters = [
   // If the userColor is set as a parameter, set a global value to use once we have initiated the pad.
   { name: "userColor",        checkVal: null,    callback: function(val) { settings.globalUserColor = decodeURIComponent(val); clientVars.userColor = decodeURIComponent(val); } },
   { name: "rtl",              checkVal: "true",  callback: function(val) { settings.rtlIsTrue = true } },
-  { name: "alwaysShowChat",   checkVal: "true",  callback: function(val) { chat.stickToScreen(); } },
+  { name: "alwaysShowChat",   checkVal: "true",  callback: function(val) { if(!settings.hideChat) chat.stickToScreen(); } },
   { name: "chatAndUsers",     checkVal: "true",  callback: function(val) { chat.chatAndUsers(); } },
   { name: "lang",             checkVal: null,    callback: function(val) { window.html10n.localize([val, 'en']); createCookie('language', val); } }
 ];
@@ -92,22 +91,22 @@ function getParams()
   // Tries server enforced options first..
   for(var i = 0; i < getParameters.length; i++)
   {
-   var setting = getParameters[i];
+    var setting = getParameters[i];
     var value = clientVars.padOptions[setting.name];
     if(value.toString() === setting.checkVal)
     {
       setting.callback(value);
     }
   }
-  
+
   // Then URL applied stuff
   var params = getUrlVars()
-  
+
   for(var i = 0; i < getParameters.length; i++)
   {
     var setting = getParameters[i];
     var value = params[setting.name];
-    
+
     if(value && (value == setting.checkVal || setting.checkVal == null))
     {
       setting.callback(value);
@@ -156,7 +155,7 @@ function sendClientReady(isReconnect, messageType)
     token = "t." + randomString();
     createCookie("token", token, 60);
   }
-  
+
   var sessionID = decodeURIComponent(readCookie("sessionID"));
   var password = readCookie("password");
 
@@ -169,14 +168,26 @@ function sendClientReady(isReconnect, messageType)
     "token": token,
     "protocolVersion": 2
   };
-  
+
   //this is a reconnect, lets tell the server our revisionnumber
   if(isReconnect == true)
   {
+    // Hammer approach for now.  This is obviously wrong and needs a proper fix
+    // TODO: See https://github.com/ether/etherpad-lite/issues/3830
+    document.location=document.location;
+
+    // Switching to pad should work but doesn't...
+    // return pad.switchToPad(padId); // hacky but whatever.
+    // It might be related to Auth because failure logs...
+    //   [ERROR] console - Auth was never applied to a session.
+    //   If you are using the stress-test tool then restart Etherpad
+    //   and the Stress test tool.
+
     msg.client_rev=pad.collabClient.getCurrentRevisionNumber();
     msg.reconnect=true;
+
   }
-  
+
   socket.json.send(msg);
 }
 
@@ -203,18 +214,26 @@ function handshake()
   socket.once('connect', function () {
     sendClientReady(false);
   });
-  
+
   socket.on('reconnect', function () {
     pad.collabClient.setChannelState("CONNECTED");
-    pad.sendClientReady(true);
+    pad.sendClientReady(receivedClientVars);
   });
-  
+
   socket.on('reconnecting', function() {
+    padeditor.disable();
+    pad.collabClient.setStateIdle();
+    pad.collabClient.setIsPendingRevision(true);
     pad.collabClient.setChannelState("RECONNECTING");
   });
 
   socket.on('reconnect_failed', function(error) {
     pad.collabClient.setChannelState("DISCONNECTED", "reconnect_timeout");
+  });
+
+  socket.on('error', function(error) {
+    pad.collabClient.setStateIdle();
+    pad.collabClient.setIsPendingRevision(true);
   });
 
   var initalized = false;
@@ -254,21 +273,17 @@ function handshake()
         $("#passwordinput").focus();
       }
     }
-    
+
     //if we haven't recieved the clientVars yet, then this message should it be
     else if (!receivedClientVars && obj.type == "CLIENT_VARS")
     {
-      //log the message
-      // SANDSTORM EDIT: don't
-      // if (window.console) console.log(obj);
-
       receivedClientVars = true;
 
       //set some client vars
       clientVars = obj.data;
       clientVars.userAgent = "Anonymous";
       clientVars.collab_client_vars.clientAgent = "Anonymous";
- 
+
       //initalize the pad
       pad._afterHandshake();
       initalized = true;
@@ -280,6 +295,8 @@ function handshake()
         $('#chaticon').hide();
         $('#options-chatandusers').parent().hide();
         $('#options-stickychat').parent().hide();
+      }else{
+        if(!settings.hideChat) $('#chaticon').show();
       }
 
       $("body").addClass(clientVars.readonly ? "readonly" : "readwrite")
@@ -299,7 +316,7 @@ function handshake()
       {
         pad.changeViewOption('noColors', true);
       }
-      
+
       if (settings.rtlIsTrue == true)
       {
         pad.changeViewOption('rtlIsTrue', true);
@@ -308,7 +325,7 @@ function handshake()
       // If the Monospacefont value is set to true then change it to monospace.
       if (settings.useMonospaceFontGlobal == true)
       {
-        pad.changeViewOption('useMonospaceFont', true);
+        pad.changeViewOption('padFontFamily', 'monospace');
       }
       // if the globalUserName value is set we need to tell the server and the client about the new authorname
       if (settings.globalUserName !== false)
@@ -332,10 +349,14 @@ function handshake()
       //this message advices the client to disconnect
       if (obj.disconnect)
       {
-        console.warn("FORCED TO DISCONNECT");
-        console.warn(obj);
         padconnectionstatus.disconnected(obj.disconnect);
         socket.disconnect();
+
+        // block user from making any change to the pad
+        padeditor.disable();
+        padeditbar.disable();
+        padimpexp.disable();
+
         return;
       }
       else
@@ -346,17 +367,11 @@ function handshake()
   });
   // Bind the colorpicker
   var fb = $('#colorpicker').farbtastic({ callback: '#mycolorpickerpreview', width: 220});
-  // Bind the read only button  
+  // Bind the read only button
   $('#readonlyinput').on('click',function(){
     padeditbar.setEmbedLinks();
   });
 }
-
-$.extend($.gritter.options, { 
-  position: 'bottom-right', // defaults to 'top-right' but can be 'bottom-left', 'bottom-right', 'top-left', 'top-right' (added in 1.7.1)
-  fade: false, // dont fade, too jerky on mobile
-  time: 6000 // hang on the screen for...
-});
 
 var pad = {
   // don't access these directly from outside this file, except
@@ -416,16 +431,32 @@ var pad = {
   },
   switchToPad: function(padId)
   {
-    var options = document.location.href.split('?')[1];
-    var newHref = padId;
-    if (typeof options != "undefined" && options != null){
-      newHref = newHref + '?' + options;
+    var newHref = new RegExp(/.*\/p\/[^\/]+/).exec(document.location.pathname) || clientVars.padId;
+    newHref = newHref[0];
+
+    var options = clientVars.padOptions;
+    if (typeof options != "undefined" && options != null)
+    {
+        var option_str = [];
+        $.each(options, function(k,v) {
+          var str = k + "=" + v;
+          option_str.push(str);
+        });
+        var option_str = option_str.join("&");
+
+      newHref = newHref + '?' + option_str;
     }
+
+    // destroy old pad from DOM
+    // See https://github.com/ether/etherpad-lite/pull/3915
+    // TODO: Check if Destroying is enough and doesn't leave negative stuff
+    // See ace.js "editor.destroy" for a reference of how it was done before
+    $('#editorcontainer').find("iframe")[0].remove();
 
     if(window.history && window.history.pushState)
     {
       $('#chattext p').remove(); //clear the chat messages
-      window.history.pushState("", "", newHref);      
+      window.history.pushState("", "", newHref);
       receivedClientVars = false;
       sendClientReady(false, 'SWITCH_TO_PAD');
     }
@@ -454,16 +485,11 @@ var pad = {
       // This will check if the prefs-cookie is set.
       // Otherwise it shows up a message to the user.
       padcookie.init();
-      if (!readCookie("prefs"))
-      {
-        $('#loading').hide();
-        $('#noCookie').show();
-      }
     });
   },
   _afterHandshake: function()
   {
-    pad.clientTimeOffset = new Date().getTime() - clientVars.serverTimestamp;
+    pad.clientTimeOffset = Date.now() - clientVars.serverTimestamp;
     //initialize the chat
     chat.init(this);
     getParams();
@@ -549,17 +575,21 @@ var pad = {
       if(padcookie.getPref("rtlIsTrue") == true){
         pad.changeViewOption('rtlIsTrue', true);
       }
+      pad.changeViewOption('padFontFamily', padcookie.getPref("padFontFamily"));
+      $('#viewfontmenu').val(padcookie.getPref("padFontFamily")).niceSelect('update');
 
-      var fonts = ['useMonospaceFont', 'useOpenDyslexicFont', 'useComicSansFont', 'useCourierNewFont', 'useGeorgiaFont', 'useImpactFont',
-        'useLucidaFont', 'useLucidaSansFont', 'usePalatinoFont', 'useTahomaFont', 'useTimesNewRomanFont',
-        'useTrebuchetFont', 'useVerdanaFont', 'useSymbolFont', 'useWebdingsFont', 'useWingDingsFont', 'useSansSerifFont',
-        'useSerifFont'];
-
-      $.each(fonts, function(i, font){
-        if(padcookie.getPref(font) == true){
-          pad.changeViewOption(font, true);
+      // Prevent sticky chat or chat and users to be checked for mobiles
+      function checkChatAndUsersVisibility(x) {
+        if (x.matches) { // If media query matches
+          $('#options-chatandusers:checked').click();
+          $('#options-stickychat:checked').click();
         }
-      })
+      }
+      var mobileMatch = window.matchMedia("(max-width: 800px)");
+      mobileMatch.addListener(checkChatAndUsersVisibility); // check if window resized
+      setTimeout(function() { checkChatAndUsersVisibility(mobileMatch); }, 0); // check now after load
+
+      $('#editorcontainer').addClass('initialized');
 
       hooks.aCallAll("postAceInit", {ace: padeditor.ace, pad: pad});
     }
@@ -733,20 +763,20 @@ var pad = {
       pad.diagnosticInfo.disconnectedMessage = message;
       pad.diagnosticInfo.padId = pad.getPadId();
       pad.diagnosticInfo.socket = {};
-      
-      //we filter non objects from the socket object and put them in the diagnosticInfo 
+
+      //we filter non objects from the socket object and put them in the diagnosticInfo
       //this ensures we have no cyclic data - this allows us to stringify the data
       for(var i in socket.socket)
       {
         var value = socket.socket[i];
         var type = typeof value;
-        
+
         if(type == "string" || type == "number")
         {
           pad.diagnosticInfo.socket[i] = value;
         }
       }
-    
+
       pad.asyncSendDiagnosticInfo();
       if (typeof window.ajlog == "string")
       {
@@ -825,7 +855,7 @@ var pad = {
       $.ajax(
       {
         type: 'post',
-        url: '/ep/pad/connection-diagnostic-info',
+        url: 'ep/pad/connection-diagnostic-info',
         data: {
           diagnosticInfo: JSON.stringify(pad.diagnosticInfo)
         },

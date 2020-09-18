@@ -21,7 +21,7 @@
  * IN THE SOFTWARE.
  */
 window.html10n = (function(window, document, undefined) {
-  
+
   // fix console
   (function() {
     var noop = function() {};
@@ -80,7 +80,7 @@ window.html10n = (function(window, document, undefined) {
       return -1;
     }
   }
-    
+
   /**
    * MicroEvent - to make any js object an event emitter (server or browser)
    */
@@ -116,7 +116,7 @@ window.html10n = (function(window, document, undefined) {
       destObject[props[i]] = MicroEvent.prototype[props[i]];
     }
   }
-  
+
   /**
    * Loader
    * The loader is responsible for loading
@@ -127,7 +127,7 @@ window.html10n = (function(window, document, undefined) {
     this.cache = {} // file => contents
     this.langs = {} // lang => strings
   }
-  
+
   Loader.prototype.load = function(lang, cb) {
     if(this.langs[lang]) return cb()
 
@@ -137,22 +137,22 @@ window.html10n = (function(window, document, undefined) {
         this.fetch(this.resources[i], lang, function(e) {
           reqs++;
           if(e) console.warn(e)
-          
+
           if (reqs < n) return;// Call back once all reqs are completed
           cb && cb()
         })
       }
     }
   }
-  
+
   Loader.prototype.fetch = function(href, lang, cb) {
     var that = this
-    
+
     if (this.cache[href]) {
       this.parse(lang, href, this.cache[href], cb)
       return;
     }
-    
+
     var xhr = new XMLHttpRequest()
     xhr.open('GET', href, /*async: */true)
     if (xhr.overrideMimeType) {
@@ -172,27 +172,49 @@ window.html10n = (function(window, document, undefined) {
     };
     xhr.send(null);
   }
-  
+
   Loader.prototype.parse = function(lang, currHref, data, cb) {
     if ('object' != typeof data) {
       cb(new Error('A file couldn\'t be parsed as json.'))
       return
     }
 
-    // dat alng ain't here, man!
+    // Check if lang exists
     if (!data[lang]) {
-      var msg = 'Couldn\'t find translations for '+lang
-        , l
-      if(~lang.indexOf('-')) lang = lang.split('-')[0] // then let's try related langs
-      for(l in data) {
-        if(lang != l && l.indexOf(lang) === 0 && data[l]) {
-          lang = l
-          break;
+      // lang not found
+      // This may be due to formatting (expected 'ru' but browser sent 'ru-RU')
+      // Set err msg before mutating lang (we may need this later)
+      var msg = 'Couldn\'t find translations for ' + lang;
+
+      // Check for '-' ('ROOT-VARIANT')
+      if (lang.indexOf('-') > -1) {
+        // ROOT-VARIANT formatting detected
+        lang = lang.split('-')[0]; // set lang to ROOT lang
+      }
+
+      // Check if ROOT lang exists (e.g 'ru')
+      if (!data[lang]) {
+        // ROOT lang not found. (e.g 'zh')
+        // Loop through langs data. Maybe we have a variant? e.g (zh-hans)
+        var l; // langs item. Declare outside of loop
+
+        for (l in data) {
+          // Is not ROOT?
+          // And index of ROOT equals 0?
+          // And is known lang?
+          if (lang != l && l.indexOf(lang) === 0 && data[l]) {
+            lang = l; // set lang to ROOT-VARIANT (e.g 'zh-hans')
+            break;
+          }
+        }
+
+        // Did we find a variant? If not, return err.
+        if (lang != l) {
+          return cb(new Error(msg));
         }
       }
-      if(lang != l) return cb(new Error(msg))
     }
-    
+
     if ('string' == typeof data[lang]) {
       // Import rule
 
@@ -200,7 +222,7 @@ window.html10n = (function(window, document, undefined) {
       var importUrl = data[lang]
 
       // relative path
-      if(data[lang].indexOf("http") != 0 && data[lang].indexOf("/") != 0) {  
+      if(data[lang].indexOf("http") != 0 && data[lang].indexOf("/") != 0) {
         importUrl = currHref+"/../"+data[lang]
       }
 
@@ -217,20 +239,20 @@ window.html10n = (function(window, document, undefined) {
     // TODO: Also store accompanying langs
     cb()
   }
-  
-  
+
+
   /**
    * The html10n object
    */
-  var html10n = 
+  var html10n =
   { language : null
   }
   MicroEvent.mixin(html10n)
-  
+
   html10n.macros = {}
 
   html10n.rtl = ["ar","dv","fa","ha","he","ks","ku","ps","ur","yi"]
-  
+
   /**
    * Get rules for plural forms (shared with JetPack), see:
    * http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html
@@ -668,7 +690,7 @@ window.html10n = (function(window, document, undefined) {
 
     return str;
   };
-  
+
   /**
    * Localize a document
    * @param langs An array of lang codes defining fallbacks
@@ -710,7 +732,7 @@ window.html10n = (function(window, document, undefined) {
     // translate element itself if necessary
     this.translateNode(translations, element)
   }
-  
+
   function asyncForEach(list, iterator, cb) {
     var i = 0
       , n = list.length
@@ -721,7 +743,7 @@ window.html10n = (function(window, document, undefined) {
       cb()
     })
   }
-  
+
   function getTranslatableChildren(element) {
     if(!document.querySelectorAll) {
       if (!element) return []
@@ -735,29 +757,29 @@ window.html10n = (function(window, document, undefined) {
     }
     return element.querySelectorAll('*[data-l10n-id]')
   }
-  
+
   html10n.get = function(id, args) {
     var translations = html10n.translations
     if(!translations) return console.warn('No translations available (yet)')
     if(!translations[id]) return console.warn('Could not find string '+id)
-    
+
     // apply macros
     var str = translations[id]
-    
+
     str = substMacros(id, str, args)
-    
+
     // apply args
     str = substArguments(str, args)
-    
+
     return str
   }
-  
+
   // replace {{arguments}} with their values or the
   // associated translation string (based on its key)
   function substArguments(str, args) {
     var reArgs = /\{\{\s*([a-zA-Z\.]+)\s*\}\}/
       , match
-    
+
     while (match = reArgs.exec(str)) {
       if (!match || match.length < 2)
         return str // argument key not found
@@ -775,15 +797,15 @@ window.html10n = (function(window, document, undefined) {
 
       str = str.substring(0, match.index) + sub + str.substr(match.index + match[0].length)
     }
-    
+
     return str
   }
-  
+
   // replace {[macros]} with their values
   function substMacros(key, str, args) {
     var regex = /\{\[\s*([a-zA-Z]+)\(([a-zA-Z]+)\)((\s*([a-zA-Z]+)\: ?([ a-zA-Z{}]+),?)+)*\s*\]\}/ //.exec('{[ plural(n) other: are {{n}}, one: is ]}')
       , match
-    
+
     while(match = regex.exec(str)) {
       // a macro has been found
       // Note: at the moment, only one parameter is supported
@@ -791,9 +813,9 @@ window.html10n = (function(window, document, undefined) {
         , paramName = match[2]
         , optv = match[3]
         , opts = {}
-      
+
       if (!(macroName in html10n.macros)) continue
-      
+
       if(optv) {
         optv.match(/(?=\s*)([a-zA-Z]+)\: ?([ a-zA-Z{}]+)(?=,?)/g).forEach(function(arg) {
           var parts = arg.split(':')
@@ -802,7 +824,7 @@ window.html10n = (function(window, document, undefined) {
           opts[name] = value
         })
       }
-      
+
       var param
       if (args && paramName in args) {
         param = args[paramName]
@@ -814,10 +836,10 @@ window.html10n = (function(window, document, undefined) {
       var macro = html10n.macros[macroName]
       str = str.substr(0, match.index) + macro(key, param, opts) + str.substr(match.index+match[0].length)
     }
-    
+
     return str
   }
-  
+
   /**
    * Applies translations to a DOM node (recursive)
    */
@@ -840,9 +862,9 @@ window.html10n = (function(window, document, undefined) {
         console.warn('Couldn\'t parse args for '+str.id)
       }
     }
-    
+
     str.str = html10n.get(str.id, str.args)
-    
+
     // get attribute name to apply str to
     var prop
       , index = str.id.lastIndexOf('.')
@@ -852,8 +874,10 @@ window.html10n = (function(window, document, undefined) {
        , "alt": 1
        , "textContent": 1
        , "value": 1
+       , "placeholder": 1
        }
-    if (index > 0 && str.id.substr(index + 1) in attrList) { // an attribute has been specified
+    if (index > 0 && str.id.substr(index + 1) in attrList) {
+      // an attribute has been specified (example: "my_translation_key.placeholder")
       prop = str.id.substr(index + 1)
     } else { // no attribute: assuming text content by default
       prop = document.body.textContent ? 'textContent' : 'innerText'
@@ -883,7 +907,7 @@ window.html10n = (function(window, document, undefined) {
       }
     }
   }
-  
+
   /**
    * Builds a translation object from a list of langs (loads the necessary translations)
    * @param langs Array - a list of langs sorted by priority (default langs should go last)
@@ -898,11 +922,11 @@ window.html10n = (function(window, document, undefined) {
     }, function() {
       var lang
       langs.reverse()
-      
+
       // loop through the priority array...
       for (var i=0, n=langs.length; i < n; i++) {
         lang = langs[i]
-        
+
         if(!lang) continue;
         if(!(lang in that.loader.langs)) {// uh, we don't have this lang availbable..
           // then check for related langs
@@ -915,13 +939,13 @@ window.html10n = (function(window, document, undefined) {
           }
           if(lang != l) continue;
         }
-        
+
         // ... and apply all strings of the current lang in the list
         // to our build object
         for (var string in that.loader.langs[lang]) {
           build[string] = that.loader.langs[lang][string]
         }
-        
+
         // the last applied lang will be exposed as the
         // lang the page was translated to
         that.language = lang
@@ -929,7 +953,7 @@ window.html10n = (function(window, document, undefined) {
       cb(null, build)
     })
   }
-  
+
   /**
    * Returns the language that was last applied to the translations hash
    * thus overriding most of the formerly applied langs
@@ -962,7 +986,7 @@ window.html10n = (function(window, document, undefined) {
     this.loader = new Loader(resources)
     this.trigger('indexed')
   }
-  
+
   if (document.addEventListener) // modern browsers and IE9+
    document.addEventListener('DOMContentLoaded', function() {
      html10n.index()
