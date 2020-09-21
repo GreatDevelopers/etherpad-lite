@@ -89,6 +89,10 @@ exports.findEtherpadRoot = function() {
    */
   var maybeEtherpadRoot = popIfEndsWith(splitFoundRoot, ['src']);
 
+  if (maybeEtherpadRoot == "") {
+    maybeEtherpadRoot = ["/"];
+  }
+
   if ((maybeEtherpadRoot === false) && (process.platform === 'win32')) {
     /*
      * If we did not find the path we are expecting, and we are running under

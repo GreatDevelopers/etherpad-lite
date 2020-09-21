@@ -86,7 +86,6 @@ log "Ensure that all dependencies are up to date...  If this is the first time y
   [ -e ep_etherpad-lite ] || ln -s ../src ep_etherpad-lite
   cd ep_etherpad-lite
   npm ci
-  npm install sqlite3   # SANDSTORM EDIT
 ) || {
   rm -rf src/node_modules
   exit 1
@@ -95,19 +94,6 @@ log "Ensure that all dependencies are up to date...  If this is the first time y
 # Remove all minified data to force node creating it new
 log "Clearing minified cache..."
 rm -f var/minified*
-
-echo "Ensure custom css/js files are created..."
-
-for f in "index" "pad" "timeslider"
-do
-  if [ ! -f "src/static/custom/$f.js" ]; then
-    cp "src/static/custom/js.template" "src/static/custom/$f.js" || exit 1
-  fi
-
-  if [ ! -f "src/static/custom/$f.css" ]; then
-    cp "src/static/custom/css.template" "src/static/custom/$f.css" || exit 1
-  fi
-done
 
 #Install plugins
 PLUGINS="ep_align ep_font_color ep_font_family ep_font_size ep_headings2 ep_markdown ep_print ep_spellcheck ep_sticky_attributes ep_subscript_and_superscript"
@@ -124,10 +110,5 @@ echo -n done > node_modules/ep_comments_page/.ep_initialized
 (cd node_modules && git clone https://github.com/kentonv/ep_author_neat.git)
 (cd node_modules/ep_author_neat && npm install)
 echo -n done > node_modules/ep_author_neat/.ep_initialized
-
-#Install capnp
-#TODO: This is a hack. It should probably be declared as an npm dependency.
-(cd node_modules && git clone https://github.com/kentonv/node-capnp.git capnp -b node4)
-(cd node_modules/capnp && npm install)
 
 exit 0
